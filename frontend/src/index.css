@@ -1,0 +1,107 @@
+@import "tailwindcss";
+@import "@fontsource/fira-sans/400.css";
+@import "@fontsource/fira-sans/500.css";
+@import "@fontsource/fira-sans/600.css";
+@import "@fontsource/fira-sans/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
+
+/* LVDA Redesign v2: nền xanh đen, nhấn xanh dương (235) và xanh lá (160); màu đỏ / vàng / xanh lá vẫn dành cho phán quyết.
+   Chữ trên nền: ink 14:1, muted ≥ 7:1, faint ≥ 4,5:1 (WCAG AA). #5E6A80 chỉ dùng cho chi tiết trang trí, không cho chữ đọc. */
+@theme {
+  --font-sans: "Fira Sans", system-ui, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+
+  --color-paper: #0a0e15;
+  --color-sidebar: #0d121b;
+  --color-surface: #111723;
+  --color-sunk: #161d2a;
+  --color-line: #1e2635;
+  --color-line-strong: #2a3446;
+  --color-ink: #e6eaf2;
+  --color-ink-2: #c4ccda;
+  --color-muted: #9aa5b8;
+  --color-faint: #7d889c;
+
+  /* nút chính: nền xanh dương, chữ trắng ≥ 4,5:1 */
+  --color-navy: oklch(0.52 0.15 255);
+  --color-navy-2: oklch(0.47 0.15 255);
+  --color-accent: oklch(0.76 0.13 235);
+  --color-accent-soft: oklch(0.27 0.06 245);
+
+  --color-good: oklch(0.78 0.15 160);
+  --color-good-soft: oklch(0.27 0.05 165);
+  --color-warn: oklch(0.85 0.13 80);
+  --color-warn-soft: oklch(0.3 0.06 75);
+  --color-bad: oklch(0.76 0.14 25);
+  --color-bad-soft: oklch(0.27 0.06 25);
+  --color-held: oklch(0.78 0.12 295);
+  --color-held-soft: oklch(0.28 0.06 295);
+}
+
+@layer base {
+  html, body, #root { height: 100%; }
+  html { color-scheme: dark; }
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; border-radius: 4px; }
+  ::selection { background: oklch(0.42 0.1 245); }
+  ::placeholder { color: var(--color-faint); }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #232c3b; border-radius: 8px; }
+}
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.scroll-thin { scrollbar-width: thin; scrollbar-color: #232c3b transparent; }
+
+/* nền vùng nội dung: quầng sáng xanh ở trên + lưới chấm */
+.lv-canvas {
+  background:
+    radial-gradient(900px 420px at 50% -120px, oklch(0.35 0.09 250 / 0.55), transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.055) 1px, transparent 0) 0 0 / 22px 22px,
+    var(--color-paper);
+}
+/* chữ chuyển màu xanh dương → xanh lá (tiêu đề) */
+.lv-gradient-text {
+  background: linear-gradient(90deg, oklch(0.82 0.12 220), oklch(0.8 0.13 165));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* viền chuyển màu quanh ô hỏi */
+.lv-glow-frame {
+  padding: 1px;
+  border-radius: 16px;
+  background: linear-gradient(120deg, oklch(0.6 0.13 235 / 0.7), #232c3b 40%, #232c3b 60%, oklch(0.65 0.13 165 / 0.6));
+  box-shadow: 0 20px 50px -20px oklch(0.5 0.14 245 / 0.55);
+}
+.lv-send { background: linear-gradient(140deg, oklch(0.74 0.14 225), oklch(0.66 0.15 260)); box-shadow: 0 6px 18px -4px oklch(0.6 0.15 245 / 0.8); }
+.lv-live { box-shadow: 0 0 6px oklch(0.78 0.15 160 / 0.7); }
+
+/* canvas lineage (React Flow, chế độ tối) dùng cùng bộ màu */
+.react-flow.dark {
+  --xy-background-color: var(--color-paper);
+  --xy-controls-button-background-color: var(--color-surface);
+  --xy-controls-button-background-color-hover: var(--color-sunk);
+  --xy-controls-button-color: var(--color-ink-2);
+  --xy-controls-button-border-color: var(--color-line);
+  --xy-edge-stroke: var(--color-line-strong);
+}
+
+/* tô màu SQL */
+.sql .kw { color: oklch(0.78 0.13 300); font-weight: 500; }
+.sql .fn { color: oklch(0.8 0.11 235); }
+.sql .str { color: oklch(0.8 0.13 160); }
+.sql .numlit { color: oklch(0.85 0.12 80); }
+.sql .cmt { color: var(--color-faint); font-style: italic; }
+.sql .hl { background: oklch(0.38 0.08 80); border-radius: 2px; }
+.diff-add { background: oklch(0.27 0.05 165); }
+.diff-del { background: oklch(0.27 0.06 25); text-decoration: line-through; text-decoration-color: oklch(0.76 0.14 25 / 0.5); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

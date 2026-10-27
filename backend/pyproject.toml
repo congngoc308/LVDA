@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lvda"
+version = "0.2.0"
+description = "Lineage-Verified Data Agent: verifies AI-written SQL against column lineage"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi==0.115.6", "uvicorn[standard]==0.34.0", "sqlglot==26.6.0", "psycopg[binary]==3.2.3",
+  "pydantic==2.10.4", "pyjwt==2.10.1", "bcrypt==4.2.1", "pyyaml==6.0.2",
+  "starlette==0.41.3",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp==1.9.4", "sse-starlette==2.1.3"]
+dev = ["pytest==8.3.4", "httpx==0.28.1", "pytest-cov==6.0.0", "ruff==0.8.4", "mypy==1.13.0", "types-PyYAML==6.0.12.20241230"]
+
+[project.scripts]
+lvda = "lvda.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["lvda*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "UP", "SIM"]
+ignore = ["E501", "SIM108", "B008", "UP038"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E741"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["lvda.verifier.*", "lvda.sqlscope", "lvda.catalog"]
+strict = true
+
+[tool.coverage.run]
+source = ["lvda"]

@@ -1,0 +1,1265 @@
+[
+ {
+  "question": "Giá trị đơn trung bình là bao nhiêu?",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "aov",
+  "traps": [
+   "V02",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.price + i.freight_value) / COUNT(DISTINCT o.order_id) AS aov\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'",
+  "id": "q001"
+ },
+ {
+  "question": "Giá trị đơn trung bình năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "aov",
+  "traps": [
+   "V02",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.price + i.freight_value) / COUNT(DISTINCT o.order_id) AS aov\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n  )",
+  "id": "q002"
+ },
+ {
+  "question": "gia tri don trung binh theo bang quy 1/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "aov",
+  "traps": [
+   "V02",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  SUM(i.price + i.freight_value) / COUNT(DISTINCT o.order_id) AS aov\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2018-04-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  aov DESC NULLS LAST\nLIMIT 30",
+  "id": "q003"
+ },
+ {
+  "question": "Giá trị đơn trung bình tháng 1/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "aov",
+  "traps": [
+   "V02",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.price + i.freight_value) / COUNT(DISTINCT o.order_id) AS aov\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2018-02-01'\n  )",
+  "id": "q004"
+ },
+ {
+  "question": "Giá trị đơn trung bình quý 1/2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "aov",
+  "traps": [
+   "V02",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.price + i.freight_value) / COUNT(DISTINCT o.order_id) AS aov\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2017-04-01'\n  )",
+  "id": "q005"
+ },
+ {
+  "question": "Giá trị đơn trung bình theo bang năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "aov",
+  "traps": [
+   "V02",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  SUM(i.price + i.freight_value) / COUNT(DISTINCT o.order_id) AS aov\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  aov DESC NULLS LAST\nLIMIT 30",
+  "id": "q006"
+ },
+ {
+  "question": "Giá trị đơn trung bình theo tháng năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "aov",
+  "traps": [
+   "V02",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  SUM(i.price + i.freight_value) / COUNT(DISTINCT o.order_id) AS aov\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q007"
+ },
+ {
+  "question": "Giá trị đơn trung bình theo loại thanh toán năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "aov",
+  "traps": [
+   "V02",
+   "V05",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  p.payment_type AS payment_type,\n  SUM(i.price + i.freight_value) / COUNT(DISTINCT o.order_id) AS aov\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nJOIN mart.fct_payments AS p\n  ON p.order_id = o.order_id\nWHERE\n  (\n    o.order_status = 'delivered'\n    AND (\n      o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n    )\n  )\n  AND p.payment_sequential = 1\nGROUP BY\n  p.payment_type\nORDER BY\n  aov DESC NULLS LAST\nLIMIT 30",
+  "id": "q008"
+ },
+ {
+  "question": "Giá trị đơn trung bình top 5 danh mục năm 2018",
+  "category": "xếp hạng",
+  "difficulty": "khó",
+  "metric_id": "aov",
+  "traps": [
+   "V02",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  COALESCE(i.category, 'unknown') AS category,\n  SUM(i.price + i.freight_value) / COUNT(DISTINCT o.order_id) AS aov\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  COALESCE(i.category, 'unknown')\nORDER BY\n  aov DESC NULLS LAST\nLIMIT 5",
+  "id": "q009"
+ },
+ {
+  "question": "Thời gian giao trung bình là bao nhiêu?",
+  "category": "đơn giản",
+  "difficulty": "dễ",
+  "metric_id": "avg_delivery_days",
+  "traps": [],
+  "gold_sql": "SELECT\n  AVG(EXTRACT(EPOCH FROM (\n    o.delivered_at - o.purchased_at\n  )) / 86400.0) AS avg_delivery_days\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'",
+  "id": "q010"
+ },
+ {
+  "question": "Thời gian giao trung bình năm 2018",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "avg_delivery_days",
+  "traps": [
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  AVG(EXTRACT(EPOCH FROM (\n    o.delivered_at - o.purchased_at\n  )) / 86400.0) AS avg_delivery_days\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )",
+  "id": "q011"
+ },
+ {
+  "question": "thoi gian giao trung binh theo bang quy 2/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "avg_delivery_days",
+  "traps": [
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  AVG(EXTRACT(EPOCH FROM (\n    o.delivered_at - o.purchased_at\n  )) / 86400.0) AS avg_delivery_days\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-04-01' AND o.purchased_at < '2018-07-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  avg_delivery_days DESC NULLS LAST\nLIMIT 30",
+  "id": "q012"
+ },
+ {
+  "question": "Thời gian giao trung bình tháng 2/2018",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "avg_delivery_days",
+  "traps": [
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  AVG(EXTRACT(EPOCH FROM (\n    o.delivered_at - o.purchased_at\n  )) / 86400.0) AS avg_delivery_days\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-02-01' AND o.purchased_at < '2018-03-01'\n  )",
+  "id": "q013"
+ },
+ {
+  "question": "Thời gian giao trung bình quý 2/2018",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "avg_delivery_days",
+  "traps": [
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  AVG(EXTRACT(EPOCH FROM (\n    o.delivered_at - o.purchased_at\n  )) / 86400.0) AS avg_delivery_days\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-04-01' AND o.purchased_at < '2018-07-01'\n  )",
+  "id": "q014"
+ },
+ {
+  "question": "Thời gian giao trung bình theo bang năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "avg_delivery_days",
+  "traps": [
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  AVG(EXTRACT(EPOCH FROM (\n    o.delivered_at - o.purchased_at\n  )) / 86400.0) AS avg_delivery_days\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  avg_delivery_days DESC NULLS LAST\nLIMIT 30",
+  "id": "q015"
+ },
+ {
+  "question": "Thời gian giao trung bình theo tháng năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "avg_delivery_days",
+  "traps": [
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  AVG(EXTRACT(EPOCH FROM (\n    o.delivered_at - o.purchased_at\n  )) / 86400.0) AS avg_delivery_days\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q016"
+ },
+ {
+  "question": "Thời gian giao trung bình theo loại thanh toán năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "avg_delivery_days",
+  "traps": [
+   "V05",
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  p.payment_type AS payment_type,\n  AVG(EXTRACT(EPOCH FROM (\n    o.delivered_at - o.purchased_at\n  )) / 86400.0) AS avg_delivery_days\nFROM mart.fct_orders AS o\nJOIN mart.fct_payments AS p\n  ON p.order_id = o.order_id\nWHERE\n  (\n    o.order_status = 'delivered'\n    AND (\n      o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n    )\n  )\n  AND p.payment_sequential = 1\nGROUP BY\n  p.payment_type\nORDER BY\n  avg_delivery_days DESC NULLS LAST\nLIMIT 30",
+  "id": "q017"
+ },
+ {
+  "question": "Điểm đánh giá trung bình là bao nhiêu?",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "avg_review_score",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  AVG(r.review_score) AS avg_review_score\nFROM mart.fct_reviews AS r\nWHERE\n  r.is_latest = TRUE",
+  "id": "q018"
+ },
+ {
+  "question": "Điểm đánh giá trung bình năm 2017",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "avg_review_score",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  AVG(r.review_score) AS avg_review_score\nFROM mart.fct_reviews AS r\nWHERE\n  r.is_latest = TRUE\n  AND (\n    r.created_at >= '2017-01-01' AND r.created_at < '2018-01-01'\n  )",
+  "id": "q019"
+ },
+ {
+  "question": "diem danh gia trung binh theo bang quy 3/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "avg_review_score",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  AVG(r.review_score) AS avg_review_score\nFROM mart.fct_reviews AS r\nJOIN mart.fct_orders AS o\n  ON o.order_id = r.order_id\nWHERE\n  r.is_latest = TRUE\n  AND (\n    r.created_at >= '2018-07-01' AND r.created_at < '2018-10-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  avg_review_score DESC NULLS LAST\nLIMIT 30",
+  "id": "q020"
+ },
+ {
+  "question": "Điểm đánh giá trung bình tháng 3/2018",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "avg_review_score",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  AVG(r.review_score) AS avg_review_score\nFROM mart.fct_reviews AS r\nWHERE\n  r.is_latest = TRUE\n  AND (\n    r.created_at >= '2018-03-01' AND r.created_at < '2018-04-01'\n  )",
+  "id": "q021"
+ },
+ {
+  "question": "Điểm đánh giá trung bình quý 3/2017",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "avg_review_score",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  AVG(r.review_score) AS avg_review_score\nFROM mart.fct_reviews AS r\nWHERE\n  r.is_latest = TRUE\n  AND (\n    r.created_at >= '2017-07-01' AND r.created_at < '2017-10-01'\n  )",
+  "id": "q022"
+ },
+ {
+  "question": "Điểm đánh giá trung bình theo bang năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "avg_review_score",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  AVG(r.review_score) AS avg_review_score\nFROM mart.fct_reviews AS r\nJOIN mart.fct_orders AS o\n  ON o.order_id = r.order_id\nWHERE\n  r.is_latest = TRUE\n  AND (\n    r.created_at >= '2017-01-01' AND r.created_at < '2018-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  avg_review_score DESC NULLS LAST\nLIMIT 30",
+  "id": "q023"
+ },
+ {
+  "question": "Điểm đánh giá trung bình theo tháng năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "avg_review_score",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', r.created_at) AS DATE) AS month,\n  AVG(r.review_score) AS avg_review_score\nFROM mart.fct_reviews AS r\nWHERE\n  r.is_latest = TRUE\n  AND (\n    r.created_at >= '2018-01-01' AND r.created_at < '2019-01-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', r.created_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q024"
+ },
+ {
+  "question": "Điểm đánh giá trung bình theo loại thanh toán năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "avg_review_score",
+  "traps": [
+   "V03",
+   "V05"
+  ],
+  "gold_sql": "SELECT\n  p.payment_type AS payment_type,\n  AVG(r.review_score) AS avg_review_score\nFROM mart.fct_reviews AS r\nJOIN mart.fct_orders AS o\n  ON o.order_id = r.order_id\nJOIN mart.fct_payments AS p\n  ON p.order_id = o.order_id\nWHERE\n  (\n    r.is_latest = TRUE\n    AND (\n      r.created_at >= '2017-01-01' AND r.created_at < '2018-01-01'\n    )\n  )\n  AND p.payment_sequential = 1\nGROUP BY\n  p.payment_type\nORDER BY\n  avg_review_score DESC NULLS LAST\nLIMIT 30",
+  "id": "q025"
+ },
+ {
+  "question": "Tỉ lệ hủy là bao nhiêu?",
+  "category": "đơn giản",
+  "difficulty": "dễ",
+  "metric_id": "cancel_rate",
+  "traps": [],
+  "gold_sql": "SELECT\n  AVG(CASE WHEN o.order_status = 'canceled' THEN 1.0 ELSE 0.0 END) AS cancel_rate\nFROM mart.fct_orders AS o",
+  "id": "q026"
+ },
+ {
+  "question": "Tỉ lệ hủy năm 2018",
+  "category": "thời gian",
+  "difficulty": "vừa",
+  "metric_id": "cancel_rate",
+  "traps": [],
+  "gold_sql": "SELECT\n  AVG(CASE WHEN o.order_status = 'canceled' THEN 1.0 ELSE 0.0 END) AS cancel_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'",
+  "id": "q027"
+ },
+ {
+  "question": "ti le huy theo bang quy 4/2018",
+  "category": "chia nhóm",
+  "difficulty": "khó",
+  "metric_id": "cancel_rate",
+  "traps": [],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  AVG(CASE WHEN o.order_status = 'canceled' THEN 1.0 ELSE 0.0 END) AS cancel_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.purchased_at >= '2018-10-01' AND o.purchased_at < '2019-01-01'\nGROUP BY\n  o.customer_state\nORDER BY\n  cancel_rate DESC NULLS LAST\nLIMIT 30",
+  "id": "q028"
+ },
+ {
+  "question": "Tỉ lệ hủy tháng 4/2018",
+  "category": "thời gian",
+  "difficulty": "vừa",
+  "metric_id": "cancel_rate",
+  "traps": [],
+  "gold_sql": "SELECT\n  AVG(CASE WHEN o.order_status = 'canceled' THEN 1.0 ELSE 0.0 END) AS cancel_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.purchased_at >= '2018-04-01' AND o.purchased_at < '2018-05-01'",
+  "id": "q029"
+ },
+ {
+  "question": "Tỉ lệ hủy quý 4/2018",
+  "category": "thời gian",
+  "difficulty": "vừa",
+  "metric_id": "cancel_rate",
+  "traps": [],
+  "gold_sql": "SELECT\n  AVG(CASE WHEN o.order_status = 'canceled' THEN 1.0 ELSE 0.0 END) AS cancel_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.purchased_at >= '2018-10-01' AND o.purchased_at < '2019-01-01'",
+  "id": "q030"
+ },
+ {
+  "question": "Tỉ lệ hủy theo bang năm 2018",
+  "category": "chia nhóm",
+  "difficulty": "khó",
+  "metric_id": "cancel_rate",
+  "traps": [],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  AVG(CASE WHEN o.order_status = 'canceled' THEN 1.0 ELSE 0.0 END) AS cancel_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\nGROUP BY\n  o.customer_state\nORDER BY\n  cancel_rate DESC NULLS LAST\nLIMIT 30",
+  "id": "q031"
+ },
+ {
+  "question": "Tỉ lệ hủy theo tháng năm 2018",
+  "category": "thời gian",
+  "difficulty": "khó",
+  "metric_id": "cancel_rate",
+  "traps": [],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  AVG(CASE WHEN o.order_status = 'canceled' THEN 1.0 ELSE 0.0 END) AS cancel_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q032"
+ },
+ {
+  "question": "Tỉ lệ hủy theo loại thanh toán năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "cancel_rate",
+  "traps": [
+   "V05"
+  ],
+  "gold_sql": "SELECT\n  p.payment_type AS payment_type,\n  AVG(CASE WHEN o.order_status = 'canceled' THEN 1.0 ELSE 0.0 END) AS cancel_rate\nFROM mart.fct_orders AS o\nJOIN mart.fct_payments AS p\n  ON p.order_id = o.order_id\nWHERE\n  (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\n  AND p.payment_sequential = 1\nGROUP BY\n  p.payment_type\nORDER BY\n  cancel_rate DESC NULLS LAST\nLIMIT 30",
+  "id": "q033"
+ },
+ {
+  "question": "Số khách hàng là bao nhiêu?",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "customer_count",
+  "traps": [
+   "V07"
+  ],
+  "gold_sql": "SELECT\n  COUNT(DISTINCT o.customer_unique_id) AS customer_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')",
+  "id": "q034"
+ },
+ {
+  "question": "Số khách hàng năm 2017",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "customer_count",
+  "traps": [
+   "V07"
+  ],
+  "gold_sql": "SELECT\n  COUNT(DISTINCT o.customer_unique_id) AS customer_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n  )",
+  "id": "q035"
+ },
+ {
+  "question": "so khach hang theo bang quy 1/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "customer_count",
+  "traps": [
+   "V07"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  COUNT(DISTINCT o.customer_unique_id) AS customer_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2018-04-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  customer_count DESC NULLS LAST\nLIMIT 30",
+  "id": "q036"
+ },
+ {
+  "question": "Số khách hàng tháng 5/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "customer_count",
+  "traps": [
+   "V07"
+  ],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  COUNT(DISTINCT o.customer_unique_id) AS customer_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-05-01' AND o.purchased_at < '2018-06-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q037"
+ },
+ {
+  "question": "Số khách hàng quý 1/2017",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "customer_count",
+  "traps": [
+   "V07"
+  ],
+  "gold_sql": "SELECT\n  COUNT(DISTINCT o.customer_unique_id) AS customer_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2017-04-01'\n  )",
+  "id": "q038"
+ },
+ {
+  "question": "Số khách hàng theo bang năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "customer_count",
+  "traps": [
+   "V07"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  COUNT(DISTINCT o.customer_unique_id) AS customer_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  customer_count DESC NULLS LAST\nLIMIT 30",
+  "id": "q039"
+ },
+ {
+  "question": "Số khách hàng theo tháng năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "customer_count",
+  "traps": [
+   "V07"
+  ],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  COUNT(DISTINCT o.customer_unique_id) AS customer_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q040"
+ },
+ {
+  "question": "Số khách hàng theo loại thanh toán năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "customer_count",
+  "traps": [
+   "V07"
+  ],
+  "gold_sql": "SELECT\n  p.payment_type AS payment_type,\n  COUNT(DISTINCT o.customer_unique_id) AS customer_count\nFROM mart.fct_orders AS o\nJOIN mart.fct_payments AS p\n  ON p.order_id = o.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n  )\nGROUP BY\n  p.payment_type\nORDER BY\n  customer_count DESC NULLS LAST\nLIMIT 30",
+  "id": "q041"
+ },
+ {
+  "question": "Số khách hàng top 5 danh mục năm 2018",
+  "category": "xếp hạng",
+  "difficulty": "khó",
+  "metric_id": "customer_count",
+  "traps": [
+   "V07"
+  ],
+  "gold_sql": "SELECT\n  COALESCE(i.category, 'unknown') AS category,\n  COUNT(DISTINCT o.customer_unique_id) AS customer_count\nFROM mart.fct_orders AS o\nJOIN mart.fct_order_items AS i\n  ON i.order_id = o.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  COALESCE(i.category, 'unknown')\nORDER BY\n  customer_count DESC NULLS LAST\nLIMIT 5",
+  "id": "q042"
+ },
+ {
+  "question": "Tỉ lệ phí vận chuyển là bao nhiêu?",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "freight_ratio",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.freight_value) / SUM(i.price) AS freight_ratio\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'",
+  "id": "q043"
+ },
+ {
+  "question": "Tỉ lệ phí vận chuyển năm 2018",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "freight_ratio",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.freight_value) / SUM(i.price) AS freight_ratio\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )",
+  "id": "q044"
+ },
+ {
+  "question": "ti le phi van chuyen theo bang quy 2/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "freight_ratio",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  SUM(i.freight_value) / SUM(i.price) AS freight_ratio\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-04-01' AND o.purchased_at < '2018-07-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  freight_ratio DESC NULLS LAST\nLIMIT 30",
+  "id": "q045"
+ },
+ {
+  "question": "Tỉ lệ phí vận chuyển tháng 6/2018",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "freight_ratio",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.freight_value) / SUM(i.price) AS freight_ratio\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-06-01' AND o.purchased_at < '2018-07-01'\n  )",
+  "id": "q046"
+ },
+ {
+  "question": "Tỉ lệ phí vận chuyển quý 2/2018",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "freight_ratio",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.freight_value) / SUM(i.price) AS freight_ratio\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-04-01' AND o.purchased_at < '2018-07-01'\n  )",
+  "id": "q047"
+ },
+ {
+  "question": "Tỉ lệ phí vận chuyển theo bang năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "freight_ratio",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  SUM(i.freight_value) / SUM(i.price) AS freight_ratio\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  freight_ratio DESC NULLS LAST\nLIMIT 30",
+  "id": "q048"
+ },
+ {
+  "question": "Tỉ lệ phí vận chuyển theo tháng năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "freight_ratio",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  SUM(i.freight_value) / SUM(i.price) AS freight_ratio\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q049"
+ },
+ {
+  "question": "Tỉ lệ phí vận chuyển theo loại thanh toán năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "freight_ratio",
+  "traps": [
+   "V03",
+   "V05"
+  ],
+  "gold_sql": "SELECT\n  p.payment_type AS payment_type,\n  SUM(i.freight_value) / SUM(i.price) AS freight_ratio\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nJOIN mart.fct_payments AS p\n  ON p.order_id = o.order_id\nWHERE\n  (\n    o.order_status = 'delivered'\n    AND (\n      o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n    )\n  )\n  AND p.payment_sequential = 1\nGROUP BY\n  p.payment_type\nORDER BY\n  freight_ratio DESC NULLS LAST\nLIMIT 30",
+  "id": "q050"
+ },
+ {
+  "question": "Tỉ lệ phí vận chuyển top 5 danh mục năm 2018",
+  "category": "xếp hạng",
+  "difficulty": "khó",
+  "metric_id": "freight_ratio",
+  "traps": [
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  COALESCE(i.category, 'unknown') AS category,\n  SUM(i.freight_value) / SUM(i.price) AS freight_ratio\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  COALESCE(i.category, 'unknown')\nORDER BY\n  freight_ratio DESC NULLS LAST\nLIMIT 5",
+  "id": "q051"
+ },
+ {
+  "question": "Doanh thu gộp là bao nhiêu?",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "gmv",
+  "traps": [
+   "V02",
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.price + i.freight_value) AS gmv\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'",
+  "id": "q052"
+ },
+ {
+  "question": "Doanh thu gộp năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "gmv",
+  "traps": [
+   "V02",
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.price + i.freight_value) AS gmv\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n  )",
+  "id": "q053"
+ },
+ {
+  "question": "doanh thu gop theo bang quy 3/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "gmv",
+  "traps": [
+   "V02",
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  SUM(i.price + i.freight_value) AS gmv\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-07-01' AND o.purchased_at < '2018-10-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  gmv DESC NULLS LAST\nLIMIT 30",
+  "id": "q054"
+ },
+ {
+  "question": "Doanh thu gộp tháng 7/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "gmv",
+  "traps": [
+   "V02",
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.price + i.freight_value) AS gmv\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-07-01' AND o.purchased_at < '2018-08-01'\n  )",
+  "id": "q055"
+ },
+ {
+  "question": "Doanh thu gộp quý 3/2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "gmv",
+  "traps": [
+   "V02",
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.price + i.freight_value) AS gmv\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2017-07-01' AND o.purchased_at < '2017-10-01'\n  )",
+  "id": "q056"
+ },
+ {
+  "question": "Doanh thu gộp theo bang năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "gmv",
+  "traps": [
+   "V02",
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  SUM(i.price + i.freight_value) AS gmv\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  gmv DESC NULLS LAST\nLIMIT 30",
+  "id": "q057"
+ },
+ {
+  "question": "Doanh thu gộp theo tháng năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "gmv",
+  "traps": [
+   "V02",
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  SUM(i.price + i.freight_value) AS gmv\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q058"
+ },
+ {
+  "question": "Doanh thu gộp theo loại thanh toán năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "gmv",
+  "traps": [
+   "V02",
+   "V03",
+   "V05"
+  ],
+  "gold_sql": "SELECT\n  p.payment_type AS payment_type,\n  SUM(i.price + i.freight_value) AS gmv\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nJOIN mart.fct_payments AS p\n  ON p.order_id = o.order_id\nWHERE\n  (\n    o.order_status = 'delivered'\n    AND (\n      o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n    )\n  )\n  AND p.payment_sequential = 1\nGROUP BY\n  p.payment_type\nORDER BY\n  gmv DESC NULLS LAST\nLIMIT 30",
+  "id": "q059"
+ },
+ {
+  "question": "Doanh thu gộp top 5 danh mục năm 2018",
+  "category": "xếp hạng",
+  "difficulty": "khó",
+  "metric_id": "gmv",
+  "traps": [
+   "V02",
+   "V03"
+  ],
+  "gold_sql": "SELECT\n  COALESCE(i.category, 'unknown') AS category,\n  SUM(i.price + i.freight_value) AS gmv\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  COALESCE(i.category, 'unknown')\nORDER BY\n  gmv DESC NULLS LAST\nLIMIT 5",
+  "id": "q060"
+ },
+ {
+  "question": "Tỉ lệ giao trễ là bao nhiêu?",
+  "category": "đơn giản",
+  "difficulty": "dễ",
+  "metric_id": "late_delivery_rate",
+  "traps": [],
+  "gold_sql": "SELECT\n  AVG(CASE WHEN o.delivered_at > o.estimated_at THEN 1.0 ELSE 0.0 END) AS late_delivery_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'",
+  "id": "q061"
+ },
+ {
+  "question": "Tỉ lệ giao trễ năm 2018",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "late_delivery_rate",
+  "traps": [
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  AVG(CASE WHEN o.delivered_at > o.estimated_at THEN 1.0 ELSE 0.0 END) AS late_delivery_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )",
+  "id": "q062"
+ },
+ {
+  "question": "ti le giao tre theo bang quy 4/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "late_delivery_rate",
+  "traps": [
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  AVG(CASE WHEN o.delivered_at > o.estimated_at THEN 1.0 ELSE 0.0 END) AS late_delivery_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-10-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  late_delivery_rate DESC NULLS LAST\nLIMIT 30",
+  "id": "q063"
+ },
+ {
+  "question": "Tỉ lệ giao trễ tháng 8/2018",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "late_delivery_rate",
+  "traps": [
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  AVG(CASE WHEN o.delivered_at > o.estimated_at THEN 1.0 ELSE 0.0 END) AS late_delivery_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-08-01' AND o.purchased_at < '2018-09-01'\n  )",
+  "id": "q064"
+ },
+ {
+  "question": "Tỉ lệ giao trễ quý 4/2018",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "late_delivery_rate",
+  "traps": [
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  AVG(CASE WHEN o.delivered_at > o.estimated_at THEN 1.0 ELSE 0.0 END) AS late_delivery_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-10-01' AND o.purchased_at < '2019-01-01'\n  )",
+  "id": "q065"
+ },
+ {
+  "question": "Tỉ lệ giao trễ theo bang năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "late_delivery_rate",
+  "traps": [
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  AVG(CASE WHEN o.delivered_at > o.estimated_at THEN 1.0 ELSE 0.0 END) AS late_delivery_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  late_delivery_rate DESC NULLS LAST\nLIMIT 30",
+  "id": "q066"
+ },
+ {
+  "question": "Tỉ lệ giao trễ theo tháng năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "late_delivery_rate",
+  "traps": [
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  AVG(CASE WHEN o.delivered_at > o.estimated_at THEN 1.0 ELSE 0.0 END) AS late_delivery_rate\nFROM mart.fct_orders AS o\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q067"
+ },
+ {
+  "question": "Tỉ lệ giao trễ theo loại thanh toán năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "late_delivery_rate",
+  "traps": [
+   "V05",
+   "V08"
+  ],
+  "gold_sql": "SELECT\n  p.payment_type AS payment_type,\n  AVG(CASE WHEN o.delivered_at > o.estimated_at THEN 1.0 ELSE 0.0 END) AS late_delivery_rate\nFROM mart.fct_orders AS o\nJOIN mart.fct_payments AS p\n  ON p.order_id = o.order_id\nWHERE\n  (\n    o.order_status = 'delivered'\n    AND (\n      o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n    )\n  )\n  AND p.payment_sequential = 1\nGROUP BY\n  p.payment_type\nORDER BY\n  late_delivery_rate DESC NULLS LAST\nLIMIT 30",
+  "id": "q068"
+ },
+ {
+  "question": "Số đơn hàng là bao nhiêu?",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "order_count",
+  "traps": [
+   "V03",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  COUNT(DISTINCT o.order_id) AS order_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')",
+  "id": "q069"
+ },
+ {
+  "question": "Số đơn hàng năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "order_count",
+  "traps": [
+   "V03",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  COUNT(DISTINCT o.order_id) AS order_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n  )",
+  "id": "q070"
+ },
+ {
+  "question": "so don hang theo bang quy 1/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "order_count",
+  "traps": [
+   "V03",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  COUNT(DISTINCT o.order_id) AS order_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2018-04-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  order_count DESC NULLS LAST\nLIMIT 30",
+  "id": "q071"
+ },
+ {
+  "question": "Số đơn hàng tháng 9/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "order_count",
+  "traps": [
+   "V03",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  COUNT(DISTINCT o.order_id) AS order_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-09-01' AND o.purchased_at < '2018-10-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q072"
+ },
+ {
+  "question": "Số đơn hàng quý 1/2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "order_count",
+  "traps": [
+   "V03",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  COUNT(DISTINCT o.order_id) AS order_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2017-04-01'\n  )",
+  "id": "q073"
+ },
+ {
+  "question": "Số đơn hàng theo bang năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "order_count",
+  "traps": [
+   "V03",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  COUNT(DISTINCT o.order_id) AS order_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  order_count DESC NULLS LAST\nLIMIT 30",
+  "id": "q074"
+ },
+ {
+  "question": "Số đơn hàng theo tháng năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "order_count",
+  "traps": [
+   "V03",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  COUNT(DISTINCT o.order_id) AS order_count\nFROM mart.fct_orders AS o\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q075"
+ },
+ {
+  "question": "Số đơn hàng theo loại thanh toán năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "order_count",
+  "traps": [
+   "V03",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  p.payment_type AS payment_type,\n  COUNT(DISTINCT o.order_id) AS order_count\nFROM mart.fct_orders AS o\nJOIN mart.fct_payments AS p\n  ON p.order_id = o.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n  )\nGROUP BY\n  p.payment_type\nORDER BY\n  order_count DESC NULLS LAST\nLIMIT 30",
+  "id": "q076"
+ },
+ {
+  "question": "Số đơn hàng top 5 danh mục năm 2018",
+  "category": "xếp hạng",
+  "difficulty": "khó",
+  "metric_id": "order_count",
+  "traps": [
+   "V03",
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  COALESCE(i.category, 'unknown') AS category,\n  COUNT(DISTINCT o.order_id) AS order_count\nFROM mart.fct_orders AS o\nJOIN mart.fct_order_items AS i\n  ON i.order_id = o.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  COALESCE(i.category, 'unknown')\nORDER BY\n  order_count DESC NULLS LAST\nLIMIT 5",
+  "id": "q077"
+ },
+ {
+  "question": "Tổng tiền thanh toán là bao nhiêu?",
+  "category": "đơn giản",
+  "difficulty": "dễ",
+  "metric_id": "payment_total",
+  "traps": [],
+  "gold_sql": "SELECT\n  SUM(p.payment_value) AS payment_total\nFROM mart.fct_payments AS p\nJOIN mart.fct_orders AS o\n  ON o.order_id = p.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')",
+  "id": "q078"
+ },
+ {
+  "question": "Tổng tiền thanh toán năm 2018",
+  "category": "thời gian",
+  "difficulty": "vừa",
+  "metric_id": "payment_total",
+  "traps": [],
+  "gold_sql": "SELECT\n  SUM(p.payment_value) AS payment_total\nFROM mart.fct_payments AS p\nJOIN mart.fct_orders AS o\n  ON o.order_id = p.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )",
+  "id": "q079"
+ },
+ {
+  "question": "tong tien thanh toan theo bang quy 2/2018",
+  "category": "chia nhóm",
+  "difficulty": "khó",
+  "metric_id": "payment_total",
+  "traps": [],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  SUM(p.payment_value) AS payment_total\nFROM mart.fct_payments AS p\nJOIN mart.fct_orders AS o\n  ON o.order_id = p.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-04-01' AND o.purchased_at < '2018-07-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  payment_total DESC NULLS LAST\nLIMIT 30",
+  "id": "q080"
+ },
+ {
+  "question": "Tổng tiền thanh toán tháng 10/2017",
+  "category": "thời gian",
+  "difficulty": "vừa",
+  "metric_id": "payment_total",
+  "traps": [],
+  "gold_sql": "SELECT\n  SUM(p.payment_value) AS payment_total\nFROM mart.fct_payments AS p\nJOIN mart.fct_orders AS o\n  ON o.order_id = p.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2017-10-01' AND o.purchased_at < '2017-11-01'\n  )",
+  "id": "q081"
+ },
+ {
+  "question": "Tổng tiền thanh toán quý 2/2018",
+  "category": "thời gian",
+  "difficulty": "vừa",
+  "metric_id": "payment_total",
+  "traps": [],
+  "gold_sql": "SELECT\n  SUM(p.payment_value) AS payment_total\nFROM mart.fct_payments AS p\nJOIN mart.fct_orders AS o\n  ON o.order_id = p.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-04-01' AND o.purchased_at < '2018-07-01'\n  )",
+  "id": "q082"
+ },
+ {
+  "question": "Tổng tiền thanh toán theo bang năm 2018",
+  "category": "chia nhóm",
+  "difficulty": "khó",
+  "metric_id": "payment_total",
+  "traps": [],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  SUM(p.payment_value) AS payment_total\nFROM mart.fct_payments AS p\nJOIN mart.fct_orders AS o\n  ON o.order_id = p.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  payment_total DESC NULLS LAST\nLIMIT 30",
+  "id": "q083"
+ },
+ {
+  "question": "Tổng tiền thanh toán theo tháng năm 2018",
+  "category": "thời gian",
+  "difficulty": "khó",
+  "metric_id": "payment_total",
+  "traps": [],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  SUM(p.payment_value) AS payment_total\nFROM mart.fct_payments AS p\nJOIN mart.fct_orders AS o\n  ON o.order_id = p.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q084"
+ },
+ {
+  "question": "Tổng tiền thanh toán theo loại thanh toán năm 2018",
+  "category": "chia nhóm",
+  "difficulty": "khó",
+  "metric_id": "payment_total",
+  "traps": [],
+  "gold_sql": "SELECT\n  p.payment_type AS payment_type,\n  SUM(p.payment_value) AS payment_total\nFROM mart.fct_payments AS p\nJOIN mart.fct_orders AS o\n  ON o.order_id = p.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  p.payment_type\nORDER BY\n  payment_total DESC NULLS LAST\nLIMIT 30",
+  "id": "q085"
+ },
+ {
+  "question": "Doanh thu hàng hóa là bao nhiêu?",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "product_revenue",
+  "traps": [
+   "V02"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.price) AS product_revenue\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'",
+  "id": "q086"
+ },
+ {
+  "question": "Doanh thu hàng hóa năm 2017",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "product_revenue",
+  "traps": [
+   "V02"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.price) AS product_revenue\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n  )",
+  "id": "q087"
+ },
+ {
+  "question": "doanh thu hang hoa theo bang quy 3/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "product_revenue",
+  "traps": [
+   "V02"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  SUM(i.price) AS product_revenue\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-07-01' AND o.purchased_at < '2018-10-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  product_revenue DESC NULLS LAST\nLIMIT 30",
+  "id": "q088"
+ },
+ {
+  "question": "Doanh thu hàng hóa tháng 11/2017",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "product_revenue",
+  "traps": [
+   "V02"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.price) AS product_revenue\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2017-11-01' AND o.purchased_at < '2017-12-01'\n  )",
+  "id": "q089"
+ },
+ {
+  "question": "Doanh thu hàng hóa quý 3/2017",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "product_revenue",
+  "traps": [
+   "V02"
+  ],
+  "gold_sql": "SELECT\n  SUM(i.price) AS product_revenue\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2017-07-01' AND o.purchased_at < '2017-10-01'\n  )",
+  "id": "q090"
+ },
+ {
+  "question": "Doanh thu hàng hóa theo bang năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "product_revenue",
+  "traps": [
+   "V02"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  SUM(i.price) AS product_revenue\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  product_revenue DESC NULLS LAST\nLIMIT 30",
+  "id": "q091"
+ },
+ {
+  "question": "Doanh thu hàng hóa theo tháng năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "product_revenue",
+  "traps": [
+   "V02"
+  ],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  SUM(i.price) AS product_revenue\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q092"
+ },
+ {
+  "question": "Doanh thu hàng hóa theo loại thanh toán năm 2017",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "product_revenue",
+  "traps": [
+   "V02",
+   "V05"
+  ],
+  "gold_sql": "SELECT\n  p.payment_type AS payment_type,\n  SUM(i.price) AS product_revenue\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nJOIN mart.fct_payments AS p\n  ON p.order_id = o.order_id\nWHERE\n  (\n    o.order_status = 'delivered'\n    AND (\n      o.purchased_at >= '2017-01-01' AND o.purchased_at < '2018-01-01'\n    )\n  )\n  AND p.payment_sequential = 1\nGROUP BY\n  p.payment_type\nORDER BY\n  product_revenue DESC NULLS LAST\nLIMIT 30",
+  "id": "q093"
+ },
+ {
+  "question": "Doanh thu hàng hóa top 5 danh mục năm 2018",
+  "category": "xếp hạng",
+  "difficulty": "khó",
+  "metric_id": "product_revenue",
+  "traps": [
+   "V02"
+  ],
+  "gold_sql": "SELECT\n  COALESCE(i.category, 'unknown') AS category,\n  SUM(i.price) AS product_revenue\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  o.order_status = 'delivered'\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  COALESCE(i.category, 'unknown')\nORDER BY\n  product_revenue DESC NULLS LAST\nLIMIT 5",
+  "id": "q094"
+ },
+ {
+  "question": "Số người bán có đơn là bao nhiêu?",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "seller_count",
+  "traps": [
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  COUNT(DISTINCT i.seller_id) AS seller_count\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')",
+  "id": "q095"
+ },
+ {
+  "question": "Số người bán có đơn năm 2018",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "seller_count",
+  "traps": [
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  COUNT(DISTINCT i.seller_id) AS seller_count\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )",
+  "id": "q096"
+ },
+ {
+  "question": "so nguoi ban co don theo bang quy 4/2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "seller_count",
+  "traps": [
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  COUNT(DISTINCT i.seller_id) AS seller_count\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-10-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  seller_count DESC NULLS LAST\nLIMIT 30",
+  "id": "q097"
+ },
+ {
+  "question": "Số người bán có đơn tháng 12/2017",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "seller_count",
+  "traps": [
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  COUNT(DISTINCT i.seller_id) AS seller_count\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2017-12-01' AND o.purchased_at < '2018-01-01'\n  )",
+  "id": "q098"
+ },
+ {
+  "question": "Số người bán có đơn quý 4/2018",
+  "category": "bẫy",
+  "difficulty": "vừa",
+  "metric_id": "seller_count",
+  "traps": [
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  COUNT(DISTINCT i.seller_id) AS seller_count\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-10-01' AND o.purchased_at < '2019-01-01'\n  )",
+  "id": "q099"
+ },
+ {
+  "question": "Số người bán có đơn theo bang năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "seller_count",
+  "traps": [
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  o.customer_state AS customer_state,\n  COUNT(DISTINCT i.seller_id) AS seller_count\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  o.customer_state\nORDER BY\n  seller_count DESC NULLS LAST\nLIMIT 30",
+  "id": "q100"
+ },
+ {
+  "question": "Số người bán có đơn theo tháng năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "seller_count",
+  "traps": [
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE) AS month,\n  COUNT(DISTINCT i.seller_id) AS seller_count\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  CAST(DATE_TRUNC('MONTH', o.purchased_at) AS DATE)\nORDER BY\n  month ASC",
+  "id": "q101"
+ },
+ {
+  "question": "Số người bán có đơn theo loại thanh toán năm 2018",
+  "category": "bẫy",
+  "difficulty": "khó",
+  "metric_id": "seller_count",
+  "traps": [
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  p.payment_type AS payment_type,\n  COUNT(DISTINCT i.seller_id) AS seller_count\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nJOIN mart.fct_payments AS p\n  ON p.order_id = o.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  p.payment_type\nORDER BY\n  seller_count DESC NULLS LAST\nLIMIT 30",
+  "id": "q102"
+ },
+ {
+  "question": "Số người bán có đơn top 5 danh mục năm 2018",
+  "category": "xếp hạng",
+  "difficulty": "khó",
+  "metric_id": "seller_count",
+  "traps": [
+   "V06"
+  ],
+  "gold_sql": "SELECT\n  COALESCE(i.category, 'unknown') AS category,\n  COUNT(DISTINCT i.seller_id) AS seller_count\nFROM mart.fct_order_items AS i\nJOIN mart.fct_orders AS o\n  ON o.order_id = i.order_id\nWHERE\n  NOT o.order_status IN ('canceled', 'unavailable')\n  AND (\n    o.purchased_at >= '2018-01-01' AND o.purchased_at < '2019-01-01'\n  )\nGROUP BY\n  COALESCE(i.category, 'unknown')\nORDER BY\n  seller_count DESC NULLS LAST\nLIMIT 5",
+  "id": "q103"
+ },
+ {
+  "question": "Thời tiết hôm nay thế nào?",
+  "category": "ngoài phạm vi",
+  "difficulty": "dễ",
+  "metric_id": null,
+  "traps": [],
+  "expect": "refuse",
+  "gold_sql": null,
+  "id": "q104"
+ },
+ {
+  "question": "Lợi nhuận năm 2018 là bao nhiêu?",
+  "category": "ngoài phạm vi",
+  "difficulty": "dễ",
+  "metric_id": null,
+  "traps": [],
+  "expect": "refuse",
+  "gold_sql": null,
+  "id": "q105"
+ },
+ {
+  "question": "Chi phí marketing quý 1/2018",
+  "category": "ngoài phạm vi",
+  "difficulty": "dễ",
+  "metric_id": null,
+  "traps": [],
+  "expect": "refuse",
+  "gold_sql": null,
+  "id": "q106"
+ },
+ {
+  "question": "Số nhân viên của Olist",
+  "category": "ngoài phạm vi",
+  "difficulty": "dễ",
+  "metric_id": null,
+  "traps": [],
+  "expect": "refuse",
+  "gold_sql": null,
+  "id": "q107"
+ },
+ {
+  "question": "Tồn kho hiện tại theo sản phẩm",
+  "category": "ngoài phạm vi",
+  "difficulty": "dễ",
+  "metric_id": null,
+  "traps": [],
+  "expect": "refuse",
+  "gold_sql": null,
+  "id": "q108"
+ },
+ {
+  "question": "Tỉ lệ chuyển đổi trên website tháng 3/2018",
+  "category": "ngoài phạm vi",
+  "difficulty": "dễ",
+  "metric_id": null,
+  "traps": [],
+  "expect": "refuse",
+  "gold_sql": null,
+  "id": "q109"
+ },
+ {
+  "question": "Giá cổ phiếu của Olist",
+  "category": "ngoài phạm vi",
+  "difficulty": "dễ",
+  "metric_id": null,
+  "traps": [],
+  "expect": "refuse",
+  "gold_sql": null,
+  "id": "q110"
+ },
+ {
+  "question": "Doanh số dự báo năm 2019 theo AI",
+  "category": "ngoài phạm vi",
+  "difficulty": "dễ",
+  "metric_id": null,
+  "traps": [],
+  "expect": "refuse",
+  "gold_sql": null,
+  "id": "q111"
+ },
+ {
+  "question": "Ai là khách VIP nhất?",
+  "category": "ngoài phạm vi",
+  "difficulty": "dễ",
+  "metric_id": null,
+  "traps": [],
+  "expect": "refuse",
+  "gold_sql": null,
+  "id": "q112"
+ },
+ {
+  "question": "Doanh thu gộp là gì?",
+  "category": "định nghĩa",
+  "difficulty": "dễ",
+  "metric_id": "gmv",
+  "traps": [],
+  "expect": "definition",
+  "gold_sql": null,
+  "id": "q113"
+ },
+ {
+  "question": "Tỉ lệ giao trễ tính thế nào?",
+  "category": "định nghĩa",
+  "difficulty": "dễ",
+  "metric_id": "late_delivery_rate",
+  "traps": [],
+  "expect": "definition",
+  "gold_sql": null,
+  "id": "q114"
+ },
+ {
+  "question": "Số khách hàng định nghĩa ra sao?",
+  "category": "định nghĩa",
+  "difficulty": "dễ",
+  "metric_id": "customer_count",
+  "traps": [],
+  "expect": "definition",
+  "gold_sql": null,
+  "id": "q115"
+ },
+ {
+  "question": "Giá trị đơn trung bình là gì?",
+  "category": "định nghĩa",
+  "difficulty": "dễ",
+  "metric_id": "aov",
+  "traps": [],
+  "expect": "definition",
+  "gold_sql": null,
+  "id": "q116"
+ }
+]

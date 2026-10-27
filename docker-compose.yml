@@ -1,0 +1,88 @@
+# docker compose up --build   → dựng toàn bộ: Postgres (5460), API (8020), web (5179), nguồn mẫu Postgres (5461).
+# docker compose --profile mysql up -d   → thêm nguồn mẫu MySQL (3307).
+# Khi dev bằng venv + Vite thì chỉ cần: docker compose up -d --wait db demo-pg
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: lvda-db
+    environment:
+      POSTGRES_DB: lvda
+      POSTGRES_USER: lvda
+      POSTGRES_PASSWORD: lvda
+    ports:
+      - "5460:5432"
+    volumes:
+      - lvda-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lvda -d lvda"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Nguồn mẫu cho "Kết nối database": cửa hàng có updated_at, role lvda_ro chỉ có SELECT.
+  demo-pg:
+    image: postgres:16-alpine
+    container_name: lvda-demo-pg
+    environment:
+      POSTGRES_DB: shop
+      POSTGRES_USER: shop
+      POSTGRES_PASSWORD: shop
+    ports:
+      - "5461:5432"
+    volumes:
+      - ./demo/source/postgres:/docker-entrypoint-initdb.d:ro
+      - lvda-demo-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shop -d shop"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  demo-mysql:
+    image: mysql:8.4
+    container_name: lvda-demo-mysql
+    profiles: ["mysql"]
+    environment:
+      MYSQL_DATABASE: shop
+      MYSQL_USER: shop
+      MYSQL_PASSWORD: shop
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./demo/source/mysql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build: ./backend
+    container_name: lvda-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      LVDA_OWNER_DSN: postgresql://lvda:lvda@db:5432/lvda
+      LVDA_READER_DSN: postgresql://lvda_reader:lvda_reader@db:5432/lvda
+      LVDA_WEB_ORIGIN: http://localhost:5179
+      LVDA_JWT_SECRET: ${LVDA_JWT_SECRET:-dev-only-change-me}
+      LVDA_SECRET_KEY: ${LVDA_SECRET_KEY:-}
+      LVDA_IN_DOCKER: "1"
+      LVDA_DEMO_SOURCES: "Postgres mẫu · shop|postgres|postgresql://lvda_ro:lvda_ro@demo-pg:5432/shop;MySQL mẫu · shop|mysql|mysql://lvda_ro:lvda_ro@demo-mysql:3306/shop"
+      LVDA_DEMO_ADMIN_PG: postgresql://shop:shop@demo-pg:5432/shop
+      LVDA_DEMO_ADMIN_MYSQL: mysql://shop:shop@demo-mysql:3306/shop
+    ports:
+      - "8020:8020"
+
+  web:
+    build: ./frontend
+    container_name: lvda-web
+    depends_on: [api]
+    ports:
+      - "5179:80"
+
+volumes:
+  lvda-pg:
+  lvda-demo-pg:

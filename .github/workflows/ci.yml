@@ -1,0 +1,64 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  secrets:
+    # SEC-06: fail the build if a credential is committed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: lvda
+          POSTGRES_USER: lvda
+          POSTGRES_PASSWORD: lvda
+        ports: ["5460:5432"]
+        options: >-
+          --health-cmd "pg_isready -U lvda -d lvda" --health-interval 3s --health-timeout 3s --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: mypy lvda/verifier lvda/sqlscope.py lvda/catalog.py lvda/db.py
+      - run: python -m lvda.seed.bootstrap
+      # NFR-04: verifier coverage must stay at or above 80%
+      - run: python -m pytest -q --cov=lvda/verifier --cov-report=term --cov-fail-under=80
+      # EVAL-08: evaluation runs on every PR (mock LLM, so deterministic and free)
+      - run: python -m lvda.evaluation all
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: backend/eval/results/
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm run build

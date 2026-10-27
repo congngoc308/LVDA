@@ -1,0 +1,251 @@
+# Định nghĩa chỉ số chuẩn. Quy ước alias: o = fct_orders, i = fct_order_items,
+# p = fct_payments, r = fct_reviews. Số tiền tính bằng BRL (real Brazil).
+
+- id: gmv
+  name_vi: Doanh thu gộp
+  description: Tổng giá hàng và phí vận chuyển của các đơn đã giao.
+  unit: BRL
+  format: currency
+  synonyms: [doanh thu, doanh thu gộp, doanh số, gmv, revenue, gross merchandise value]
+  owner: engineer@lvda.dev
+  status: certified
+  grain: order
+  entity_key: mart.fct_orders.order_id
+  time_column: mart.fct_orders.purchased_at
+  canonical_sql: |
+    SELECT SUM(i.price + i.freight_value) AS gmv
+    FROM mart.fct_order_items AS i
+    JOIN mart.fct_orders AS o ON o.order_id = i.order_id
+    WHERE o.order_status = 'delivered'
+  required_filters:
+    - {column: mart.fct_orders.order_status, op: "=", value: delivered}
+  assumptions:
+    - Chỉ tính đơn đã giao (order_status = 'delivered')
+    - Gồm giá hàng và phí vận chuyển
+
+- id: product_revenue
+  name_vi: Doanh thu hàng hóa
+  description: Tổng giá hàng (không gồm phí vận chuyển) của các đơn đã giao.
+  unit: BRL
+  format: currency
+  synonyms: [doanh thu hàng hóa, doanh thu sản phẩm, tiền hàng, product revenue]
+  owner: engineer@lvda.dev
+  status: certified
+  grain: order
+  entity_key: mart.fct_orders.order_id
+  time_column: mart.fct_orders.purchased_at
+  canonical_sql: |
+    SELECT SUM(i.price) AS product_revenue
+    FROM mart.fct_order_items AS i
+    JOIN mart.fct_orders AS o ON o.order_id = i.order_id
+    WHERE o.order_status = 'delivered'
+  required_filters:
+    - {column: mart.fct_orders.order_status, op: "=", value: delivered}
+  assumptions:
+    - Chỉ tính đơn đã giao
+    - Không gồm phí vận chuyển
+
+- id: payment_total
+  name_vi: Tổng tiền thanh toán
+  description: Tổng số tiền khách đã trả, trừ đơn bị hủy hoặc không khả dụng.
+  unit: BRL
+  format: currency
+  synonyms: [tổng tiền thanh toán, tiền thanh toán, tiền khách trả, payment, payments]
+  owner: engineer@lvda.dev
+  status: certified
+  grain: payment
+  entity_key: mart.fct_payments.order_id
+  time_column: mart.fct_orders.purchased_at
+  canonical_sql: |
+    SELECT SUM(p.payment_value) AS payment_total
+    FROM mart.fct_payments AS p
+    JOIN mart.fct_orders AS o ON o.order_id = p.order_id
+    WHERE o.order_status NOT IN ('canceled', 'unavailable')
+  required_filters:
+    - {column: mart.fct_orders.order_status, op: "not in", value: [canceled, unavailable]}
+  assumptions:
+    - Loại đơn bị hủy hoặc không khả dụng
+    - Gồm mọi lần thanh toán (voucher, thẻ, boleto)
+
+- id: order_count
+  name_vi: Số đơn hàng
+  description: Số đơn hợp lệ (không bị hủy, không khả dụng).
+  unit: đơn
+  format: integer
+  synonyms: [số đơn, số đơn hàng, đơn hàng, lượng đơn, orders, order count]
+  owner: engineer@lvda.dev
+  status: certified
+  grain: order
+  entity_key: mart.fct_orders.order_id
+  time_column: mart.fct_orders.purchased_at
+  canonical_sql: |
+    SELECT COUNT(DISTINCT o.order_id) AS order_count
+    FROM mart.fct_orders AS o
+    WHERE o.order_status NOT IN ('canceled', 'unavailable')
+  required_filters:
+    - {column: mart.fct_orders.order_status, op: "not in", value: [canceled, unavailable]}
+  assumptions:
+    - Đếm mỗi đơn một lần
+    - Loại đơn bị hủy hoặc không khả dụng
+
+- id: aov
+  name_vi: Giá trị đơn trung bình
+  description: Doanh thu gộp chia số đơn đã giao.
+  unit: BRL
+  format: currency
+  synonyms: [giá trị đơn trung bình, giá trị trung bình mỗi đơn, aov, average order value]
+  owner: engineer@lvda.dev
+  status: certified
+  grain: order
+  entity_key: mart.fct_orders.order_id
+  time_column: mart.fct_orders.purchased_at
+  canonical_sql: |
+    SELECT SUM(i.price + i.freight_value) / COUNT(DISTINCT o.order_id) AS aov
+    FROM mart.fct_order_items AS i
+    JOIN mart.fct_orders AS o ON o.order_id = i.order_id
+    WHERE o.order_status = 'delivered'
+  required_filters:
+    - {column: mart.fct_orders.order_status, op: "=", value: delivered}
+  assumptions:
+    - Chỉ tính đơn đã giao
+    - Mẫu số là số đơn, không phải số món
+
+- id: customer_count
+  name_vi: Số khách hàng
+  description: Số khách thật (customer_unique_id) có đơn hợp lệ.
+  unit: khách
+  format: integer
+  synonyms: [số khách, số khách hàng, khách hàng, người mua, customers]
+  owner: engineer@lvda.dev
+  status: certified
+  grain: customer
+  entity_key: mart.fct_orders.customer_unique_id
+  time_column: mart.fct_orders.purchased_at
+  canonical_sql: |
+    SELECT COUNT(DISTINCT o.customer_unique_id) AS customer_count
+    FROM mart.fct_orders AS o
+    WHERE o.order_status NOT IN ('canceled', 'unavailable')
+  required_filters:
+    - {column: mart.fct_orders.order_status, op: "not in", value: [canceled, unavailable]}
+  assumptions:
+    - Đếm theo customer_unique_id (customer_id là mã theo từng đơn)
+
+- id: seller_count
+  name_vi: Số người bán có đơn
+  description: Số người bán có ít nhất một món trong đơn hợp lệ.
+  unit: người bán
+  format: integer
+  synonyms: [số người bán, số seller, người bán, nhà bán, sellers]
+  owner: engineer@lvda.dev
+  status: certified
+  grain: seller
+  entity_key: mart.fct_order_items.seller_id
+  time_column: mart.fct_orders.purchased_at
+  canonical_sql: |
+    SELECT COUNT(DISTINCT i.seller_id) AS seller_count
+    FROM mart.fct_order_items AS i
+    JOIN mart.fct_orders AS o ON o.order_id = i.order_id
+    WHERE o.order_status NOT IN ('canceled', 'unavailable')
+  required_filters:
+    - {column: mart.fct_orders.order_status, op: "not in", value: [canceled, unavailable]}
+  assumptions:
+    - Loại đơn bị hủy hoặc không khả dụng
+
+- id: late_delivery_rate
+  name_vi: Tỉ lệ giao trễ
+  description: Phần trăm đơn đã giao có ngày giao sau ngày dự kiến.
+  unit: "%"
+  format: percent
+  synonyms: [tỉ lệ giao trễ, tỷ lệ giao trễ, giao trễ, giao hàng trễ, late delivery]
+  owner: engineer@lvda.dev
+  status: certified
+  grain: order
+  entity_key: mart.fct_orders.order_id
+  time_column: mart.fct_orders.purchased_at
+  canonical_sql: |
+    SELECT AVG(CASE WHEN o.delivered_at > o.estimated_at THEN 1.0 ELSE 0.0 END) AS late_delivery_rate
+    FROM mart.fct_orders AS o
+    WHERE o.order_status = 'delivered'
+  required_filters:
+    - {column: mart.fct_orders.order_status, op: "=", value: delivered}
+  assumptions:
+    - Chỉ tính đơn đã giao
+
+- id: avg_delivery_days
+  name_vi: Thời gian giao trung bình
+  description: Số ngày trung bình từ lúc đặt tới lúc giao, đơn đã giao.
+  unit: ngày
+  format: days
+  synonyms: [thời gian giao trung bình, thời gian giao hàng, số ngày giao, delivery time]
+  owner: engineer@lvda.dev
+  status: certified
+  grain: order
+  entity_key: mart.fct_orders.order_id
+  time_column: mart.fct_orders.purchased_at
+  canonical_sql: |
+    SELECT AVG(EXTRACT(EPOCH FROM (o.delivered_at - o.purchased_at)) / 86400.0) AS avg_delivery_days
+    FROM mart.fct_orders AS o
+    WHERE o.order_status = 'delivered'
+  required_filters:
+    - {column: mart.fct_orders.order_status, op: "=", value: delivered}
+  assumptions:
+    - Chỉ tính đơn đã giao
+
+- id: avg_review_score
+  name_vi: Điểm đánh giá trung bình
+  description: Điểm trung bình (1–5), mỗi đơn chỉ lấy đánh giá mới nhất.
+  unit: điểm
+  format: score
+  synonyms: [điểm đánh giá, điểm đánh giá trung bình, đánh giá, review score, rating]
+  owner: engineer@lvda.dev
+  status: certified
+  grain: order
+  entity_key: mart.fct_reviews.order_id
+  time_column: mart.fct_reviews.created_at
+  canonical_sql: |
+    SELECT AVG(r.review_score) AS avg_review_score
+    FROM mart.fct_reviews AS r
+    WHERE r.is_latest = TRUE
+  required_filters:
+    - {column: mart.fct_reviews.is_latest, op: "=", value: true}
+  assumptions:
+    - Mỗi đơn chỉ lấy đánh giá mới nhất
+
+- id: cancel_rate
+  name_vi: Tỉ lệ hủy
+  description: Phần trăm đơn bị hủy trên tổng số đơn.
+  unit: "%"
+  format: percent
+  synonyms: [tỉ lệ hủy, tỷ lệ hủy, hủy đơn, đơn hủy, cancel rate]
+  owner: engineer@lvda.dev
+  status: certified
+  grain: order
+  entity_key: mart.fct_orders.order_id
+  time_column: mart.fct_orders.purchased_at
+  canonical_sql: |
+    SELECT AVG(CASE WHEN o.order_status = 'canceled' THEN 1.0 ELSE 0.0 END) AS cancel_rate
+    FROM mart.fct_orders AS o
+  required_filters: []
+  assumptions:
+    - Mẫu số là toàn bộ đơn
+
+- id: freight_ratio
+  name_vi: Tỉ lệ phí vận chuyển
+  description: Tổng phí vận chuyển chia tổng giá hàng, đơn đã giao.
+  unit: "%"
+  format: percent
+  synonyms: [tỉ lệ phí vận chuyển, tỷ lệ phí ship, phí vận chuyển, phí ship, freight]
+  owner: engineer@lvda.dev
+  status: draft
+  grain: order
+  entity_key: mart.fct_orders.order_id
+  time_column: mart.fct_orders.purchased_at
+  canonical_sql: |
+    SELECT SUM(i.freight_value) / SUM(i.price) AS freight_ratio
+    FROM mart.fct_order_items AS i
+    JOIN mart.fct_orders AS o ON o.order_id = i.order_id
+    WHERE o.order_status = 'delivered'
+  required_filters:
+    - {column: mart.fct_orders.order_status, op: "=", value: delivered}
+  assumptions:
+    - Chỉ tính đơn đã giao

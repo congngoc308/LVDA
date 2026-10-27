@@ -1,0 +1,13 @@
+{
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "taste-skill@taste-skill": true,
+    "postgres-best-practices@supabase-agent-skills": true,
+    "docker-skills@docker": true,
+    "property-based-testing@trailofbits": true,
+    "open-sourcing@trailofbits": true,
+    "evals@ai-evals-course": true
+  }
+}

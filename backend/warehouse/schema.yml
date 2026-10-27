@@ -1,0 +1,174 @@
+# Metadata dùng cho bộ kiểm định: khóa, quan hệ, cột nhạy cảm, đối tượng ngừng dùng.
+# Tên đầy đủ: schema.table.column
+
+grains:
+  mart.fct_orders: [order_id]
+  mart.fct_order_items: [order_id, order_item_id]
+  mart.fct_payments: [order_id, payment_sequential]
+  mart.fct_reviews: [review_id]
+  mart.dim_customers: [customer_unique_id]
+  mart.dim_sellers: [seller_id]
+  mart.dim_products: [product_id]
+  raw.orders: [order_id]
+  raw.customers: [customer_id]
+  raw.order_items: [order_id, order_item_id]
+  raw.order_payments: [order_id, payment_sequential]
+  raw.order_reviews: [review_id]
+  raw.products: [product_id]
+  raw.sellers: [seller_id]
+
+# child -> parent là quan hệ nhiều-một. unique_when: bộ lọc làm child còn 1 dòng / parent.
+relationships:
+  - child: mart.fct_order_items
+    parent: mart.fct_orders
+    keys: [mart.fct_order_items.order_id, mart.fct_orders.order_id]
+  - child: mart.fct_payments
+    parent: mart.fct_orders
+    keys: [mart.fct_payments.order_id, mart.fct_orders.order_id]
+    unique_when: {column: mart.fct_payments.payment_sequential, value: 1}
+  - child: mart.fct_reviews
+    parent: mart.fct_orders
+    keys: [mart.fct_reviews.order_id, mart.fct_orders.order_id]
+    unique_when: {column: mart.fct_reviews.is_latest, value: true}
+  - child: mart.fct_orders
+    parent: mart.dim_customers
+    keys: [mart.fct_orders.customer_unique_id, mart.dim_customers.customer_unique_id]
+  - child: mart.fct_order_items
+    parent: mart.dim_sellers
+    keys: [mart.fct_order_items.seller_id, mart.dim_sellers.seller_id]
+  - child: mart.fct_order_items
+    parent: mart.dim_products
+    keys: [mart.fct_order_items.product_id, mart.dim_products.product_id]
+  # Bảng raw: khai báo để câu SQL viết thẳng trên raw vẫn kiểm được.
+  - child: raw.orders
+    parent: raw.customers
+    keys: [raw.orders.customer_id, raw.customers.customer_id]
+  - child: raw.order_items
+    parent: raw.orders
+    keys: [raw.order_items.order_id, raw.orders.order_id]
+  - child: raw.order_payments
+    parent: raw.orders
+    keys: [raw.order_payments.order_id, raw.orders.order_id]
+    unique_when: {column: raw.order_payments.payment_sequential, value: 1}
+  - child: raw.order_reviews
+    parent: raw.orders
+    keys: [raw.order_reviews.order_id, raw.orders.order_id]
+  - child: raw.order_items
+    parent: raw.products
+    keys: [raw.order_items.product_id, raw.products.product_id]
+  - child: raw.order_items
+    parent: raw.sellers
+    keys: [raw.order_items.seller_id, raw.sellers.seller_id]
+  - child: raw.products
+    parent: raw.product_category_name_translation
+    keys: [raw.products.product_category_name, raw.product_category_name_translation.product_category_name]
+
+# Đếm theo cột bên trái là đếm sai thực thể; cột đúng ở bên phải.
+misleading_keys:
+  mart.fct_orders.customer_id: mart.fct_orders.customer_unique_id
+  raw.orders.customer_id: raw.customers.customer_unique_id
+
+pii:
+  - mart.fct_orders.customer_unique_id
+  - mart.dim_customers.customer_unique_id
+  - mart.dim_customers.zip_code_prefix
+  - mart.dim_geolocation.lat
+  - mart.dim_geolocation.lng
+  - mart.fct_reviews.comment
+
+deprecated:
+  - mart.fct_orders_v1
+
+# Chỉ cho phép đọc các schema này.
+allowed_schemas: [mart, raw]
+
+# Miền nghiệp vụ: nhóm bảng trên trang Dữ liệu (tìm kiếm lọc theo miền).
+domains:
+  orders:
+    label: Đơn hàng
+    tables: [raw.orders, raw.order_items, mart.stg_orders, mart.stg_order_items, mart.fct_orders, mart.fct_orders_v1, mart.fct_order_items]
+  customers:
+    label: Khách hàng
+    tables: [raw.customers, raw.geolocation, mart.stg_customers, mart.stg_geolocation, mart.dim_customers, mart.dim_geolocation]
+  products:
+    label: Sản phẩm & người bán
+    tables: [raw.products, raw.product_category_name_translation, raw.sellers, mart.stg_products, mart.stg_sellers, mart.dim_products, mart.dim_sellers]
+  payments:
+    label: Thanh toán
+    tables: [raw.order_payments, mart.stg_payments, mart.fct_payments]
+  reviews:
+    label: Đánh giá
+    tables: [raw.order_reviews, mart.stg_reviews, mart.fct_reviews]
+
+# DATA-04: mô tả nghiệp vụ tiếng Việt. Trong MVP coi như "LLM viết", engineer duyệt trên trang Dữ liệu.
+descriptions:
+  mart.fct_orders:
+    _table: Mỗi dòng là một đơn hàng, kèm bang của khách và các mốc thời gian.
+    order_id: Mã đơn hàng. Khóa của bảng.
+    customer_id: Mã khách theo từng đơn (mỗi đơn một mã). Không dùng để đếm khách.
+    customer_unique_id: Mã khách thật, giống nhau giữa các lần mua. Dùng để đếm khách.
+    customer_city: Thành phố của khách lúc đặt đơn.
+    customer_state: Bang của khách (SP, RJ, MG…).
+    order_status: Trạng thái đơn. Đơn đã giao là 'delivered'; đơn hủy là 'canceled'.
+    purchased_at: Thời điểm khách đặt hàng. Cột thời gian mặc định của các chỉ số.
+    approved_at: Thời điểm thanh toán được duyệt.
+    delivered_at: Thời điểm giao tới khách. Trống nếu đơn chưa giao.
+    estimated_at: Ngày giao dự kiến báo cho khách.
+    items_amount: Tổng giá hàng của đơn (BRL), đã gộp từ các món.
+    freight_amount: Tổng phí vận chuyển của đơn (BRL).
+    gmv: Giá hàng cộng phí vận chuyển của đơn (BRL). Cộng cột này qua các đơn đã giao ra doanh thu gộp.
+    item_count: Số món trong đơn.
+    payment_amount: Tổng tiền khách đã trả cho đơn (BRL), gộp mọi lần thanh toán.
+  mart.fct_order_items:
+    _table: Mỗi dòng là một món trong đơn. Một đơn có thể có nhiều món.
+    order_id: Mã đơn hàng. Nhiều dòng có thể chung một đơn.
+    order_item_id: Số thứ tự món trong đơn (1, 2, 3…).
+    product_id: Mã sản phẩm.
+    seller_id: Mã người bán của món này.
+    price: Giá hàng của món, đơn vị BRL, chưa gồm phí vận chuyển.
+    freight_value: Phí vận chuyển phân bổ cho món, đơn vị BRL.
+    shipping_limit_at: Hạn người bán phải giao cho đơn vị vận chuyển.
+    category_pt: Tên danh mục gốc tiếng Bồ Đào Nha.
+    category: Tên danh mục tiếng Anh.
+  mart.fct_payments:
+    _table: Mỗi dòng là một lần thanh toán. Một đơn có thể trả nhiều lần (voucher + thẻ).
+    order_id: Mã đơn hàng.
+    payment_sequential: Thứ tự lần thanh toán trong đơn. Lọc = 1 để mỗi đơn còn một dòng.
+    payment_type: Hình thức thanh toán (credit_card, boleto, voucher, debit_card).
+    payment_installments: Số kỳ trả góp.
+    payment_value: Số tiền của lần thanh toán này, đơn vị BRL. Không phải doanh thu hàng hóa.
+  mart.fct_reviews:
+    _table: Mỗi dòng là một đánh giá. Một đơn có thể có nhiều đánh giá.
+    review_id: Mã đánh giá.
+    order_id: Mã đơn hàng được đánh giá.
+    review_score: Điểm từ 1 đến 5.
+    comment: Nội dung khách viết. Dữ liệu tự do, có thể chứa thông tin cá nhân.
+    created_at: Ngày tạo đánh giá.
+    is_latest: TRUE nếu là đánh giá mới nhất của đơn.
+  mart.dim_customers:
+    _table: Mỗi dòng là một khách thật (customer_unique_id).
+    customer_unique_id: Mã khách thật. Khóa của bảng.
+    zip_code_prefix: 5 số đầu mã bưu chính của khách. Thông tin nhạy cảm.
+    city: Thành phố của khách.
+    state: Bang của khách.
+  mart.dim_sellers:
+    _table: Mỗi dòng là một người bán.
+    seller_id: Mã người bán. Khóa của bảng.
+    zip_code_prefix: 5 số đầu mã bưu chính của người bán.
+    city: Thành phố của người bán.
+    state: Bang của người bán.
+  mart.dim_products:
+    _table: Mỗi dòng là một sản phẩm.
+    product_id: Mã sản phẩm. Khóa của bảng.
+    category_pt: Tên danh mục gốc tiếng Bồ Đào Nha.
+    category: Tên danh mục tiếng Anh.
+    weight_g: Khối lượng sản phẩm, gram.
+  mart.dim_geolocation:
+    _table: Tọa độ theo mã bưu chính. Một mã có nhiều dòng, nên không join trực tiếp theo mã này.
+    zip_code_prefix: 5 số đầu mã bưu chính. Không duy nhất.
+    lat: Vĩ độ. Thông tin nhạy cảm.
+    lng: Kinh độ. Thông tin nhạy cảm.
+    city: Thành phố.
+    state: Bang.
+  mart.fct_orders_v1:
+    _table: Bản cũ của fct_orders, đã ngừng dùng. Không có customer_unique_id.
