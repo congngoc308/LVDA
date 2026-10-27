@@ -17,8 +17,10 @@ def _databases(user_id: int) -> list[dict]:
         """SELECT d.id, d.name, d.description, m.role, m.can_certify, m.granted_via, m.expires_at,
                   (m.expires_at IS NOT NULL AND m.expires_at < now()) AS expired,
                   (d.settings ? 'warehouse') AS catalog_only,
-                  EXISTS (SELECT 1 FROM app.sources s WHERE s.database_id = d.id) AS has_source
+                  EXISTS (SELECT 1 FROM app.sources s WHERE s.database_id = d.id) AS has_source,
+                  g.name AS granted_by_name
            FROM app.database_members m JOIN app.databases d ON d.id = m.database_id
+           LEFT JOIN app.users g ON g.id = m.granted_by
            WHERE m.user_id = %s ORDER BY d.id""", (user_id,))
 
 

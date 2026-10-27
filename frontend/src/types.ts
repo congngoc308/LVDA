@@ -7,6 +7,7 @@ export interface DatabaseRef {
   granted_via: "direct" | "link"; expires_at: string | null; expired: boolean;
   catalog_only: boolean; // chỉ duyệt danh mục và lineage, agent chưa hỏi được
   has_source: boolean; // dữ liệu được đồng bộ từ một Postgres/MySQL bên ngoài
+  granted_by_name: string | null; // người cấp quyền (chia sẻ trực tiếp hoặc tạo link)
 }
 
 export interface Finding {
