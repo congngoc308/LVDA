@@ -10,6 +10,7 @@ Dòng bị xóa ở nguồn không đi theo đường tăng dần: so số dòng
 from __future__ import annotations
 
 import base64
+import contextlib
 import hashlib
 import json
 import logging
@@ -269,10 +270,8 @@ class Source:
             after = [rows[-1][i] for i in pos]
 
     def close(self) -> None:
-        try:
+        with contextlib.suppress(Exception):
             self.conn.close()
-        except Exception:
-            pass
 
 
 class PgSource(Source):
@@ -1060,10 +1059,8 @@ def start_scheduler() -> threading.Event | None:
         while not stop.wait(20):
             try:
                 for database_id in due():
-                    try:
+                    with contextlib.suppress(Busy, SourceError):
                         start(database_id, "schedule")
-                    except (Busy, SourceError):
-                        pass
             except Exception:
                 log.exception("scheduler tick failed")
 
