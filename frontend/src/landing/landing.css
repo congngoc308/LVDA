@@ -1,0 +1,36 @@
+/* Landing: chỉ tải cùng chunk của /gioi-thieu. Màu lấy từ token trong index.css nên tự đổi theo sáng/tối. */
+
+/* mỗi ảnh chụp có hai bản; chỉ hiện bản khớp chế độ đang dùng */
+.lp-shot-light { display: none !important; }
+:root[data-theme="light"] .lp-shot-light { display: block !important; }
+:root[data-theme="light"] .lp-shot-dark { display: none !important; }
+
+/* quầng màu nhấn sau ảnh sản phẩm */
+.lp-glow {
+  background:
+    radial-gradient(60% 55% at 30% 40%, oklch(0.6 0.15 255 / 0.22), transparent 70%),
+    radial-gradient(45% 45% at 75% 65%, oklch(0.7 0.12 210 / 0.12), transparent 70%);
+  filter: blur(8px);
+}
+:root[data-theme="light"] .lp-glow {
+  background:
+    radial-gradient(60% 55% at 30% 40%, oklch(0.62 0.16 255 / 0.16), transparent 70%),
+    radial-gradient(45% 45% at 75% 65%, oklch(0.7 0.1 210 / 0.1), transparent 70%);
+}
+
+/* lưới chấm mờ sau tiêu đề trang, nhạt dần xuống dưới */
+.lp-grid {
+  background-image: radial-gradient(var(--color-line-strong) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(to bottom, black, transparent 80%);
+  opacity: 0.7;
+}
+
+/* đường nối dọc giữa các tầng trong sơ đồ "LVDA nằm ở đâu" */
+.lp-link {
+  width: 1px; height: 40px; margin: 0 auto;
+  background: linear-gradient(var(--color-accent-line), var(--color-accent));
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

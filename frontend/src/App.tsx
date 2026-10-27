@@ -14,6 +14,9 @@ import SourcesPage from "./pages/Sources";
 // React Flow chỉ dùng ở tab Dữ liệu: tách chunk để các tab khác không phải tải
 const DataPage = lazy(() => import("./pages/Data"));
 const dataPage = <Suspense fallback={<div className="grid h-full place-items-center text-muted">Đang tải…</div>}><DataPage /></Suspense>;
+// Landing giới thiệu: công khai, không cần đăng nhập, tách chunk riêng
+const Landing = lazy(() => import("./landing/Landing"));
+const landing = <Suspense fallback={<div className="grid h-full place-items-center text-muted">Đang tải…</div>}><Landing /></Suspense>;
 
 function Protected({ children, engineer = false }: { children: React.ReactNode; engineer?: boolean }) {
   const { user, db, loading } = useSession();
@@ -30,6 +33,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/join/:token" element={<JoinPage />} />
+      <Route path="/gioi-thieu/*" element={landing} />
       {/* Hỏi & kiểm; /metrics và /settings mở panel cấu hình agent ngay trên màn hình hỏi */}
       <Route path="/" element={<Protected><Workbench /></Protected>} />
       <Route path="/runs/:runId" element={<Protected><Workbench /></Protected>} />
