@@ -1,6 +1,7 @@
-import { ArrowRight, BadgeCheck, Database, GitBranch, Link2, LayoutDashboard, RefreshCcw, ShieldCheck, Terminal, Users } from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowRight, BadgeCheck, Database, GitBranch, Link2, LayoutDashboard, Play, RefreshCcw, ShieldCheck, Terminal, Users } from "lucide-react";
+import { useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { cx } from "../../components/ui";
 import {
   Card, Code, Container, Cta, CtaBand, Eyebrow, Faq, Frame, GITHUB, L, Lead, MvpNote, Section, SectionHead, Shot, Stat, usePageTitle, VerdictChip,
 } from "../ui";
@@ -12,7 +13,7 @@ function Hero() {
       <Container>
         <Link to={`${L()}#demo`} className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-surface py-1 pr-3 pl-1 text-[13px] text-ink-2 hover:border-accent-line">
           <span className="rounded-full bg-accent-soft px-2 py-0.5 font-medium text-accent">MVP mã nguồn mở</span>
-          Xem demo 1 phút 50<ArrowRight size={13} aria-hidden />
+          Xem demo 2 phút 30<ArrowRight size={13} aria-hidden />
         </Link>
         <h1 className="mt-6 max-w-[960px] text-[40px] leading-[1.04] font-semibold tracking-[-0.035em] text-balance sm:text-[64px]">
           Agent dữ liệu kiểm từng con số <span className="text-accent">trước khi trả lời.</span>
@@ -196,30 +197,96 @@ function WhatItSees() {
   );
 }
 
+// Mốc (giây) trong /landing/demo.mp4, đo theo lúc phụ đề đổi; quay lại video thì đo lại
 const SCENES = [
-  ["KB-1", "Câu trả lời Xanh", "Hỏi một chỉ số đã chứng nhận, đọc phiếu kiểm và lineage."],
-  ["KB-2", "Tự sửa cột đo sai", "Bản nháp đầu dùng nhầm cột, bộ kiểm báo Đỏ, agent sửa thành Xanh."],
-  ["KB-3", "Bắt join nhân dòng", "Join bảng con làm số bị cộng nhiều lần; con số bị chặn."],
-  ["KB-4", "Câu hỏi chưa có chỉ số", "Trả lời ở mức Vàng và gửi vào hàng đợi duyệt."],
-  ["KB-5", "Kiểm SQL qua MCP", "Gọi verify_sql từ Claude Code trên chính câu SQL đó."],
+  { k: "KB-1", start: 12, title: "Câu trả lời Xanh", desc: "Hỏi một chỉ số đã chứng nhận, đọc phiếu kiểm và lineage." },
+  { k: "KB-2", start: 26, title: "Tự sửa cột đo sai", desc: "Bản nháp đầu dùng nhầm cột, bộ kiểm báo Đỏ, agent sửa thành Xanh." },
+  { k: "KB-3", start: 58, title: "Bắt join nhân dòng", desc: "Dán một câu SQL join bảng con: số bị cộng nhiều lần, bộ kiểm báo Đỏ và dặn chưa dùng kết quả." },
+  { k: "KB-4", start: 85, title: "Câu hỏi chưa có chỉ số", desc: "Trả lời ở mức Vàng và gửi vào hàng đợi duyệt." },
+  { k: "KB-5", start: 104.5, title: "Kiểm SQL qua MCP", desc: "Một MCP client gọi verify_sql: bản nháp thiếu bộ lọc bị Đỏ, bản đã sửa thành Xanh." },
+  { k: "EVAL", start: 121, title: "Kết quả đánh giá", desc: "Dashboard Đánh giá và báo cáo chi tiết: bắt mọi câu SQL lỗi trong tập thử, 0/60 báo nhầm." },
 ];
+const SCENES_END = 147; // sau đó là thẻ kết
+
+const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 function Demo() {
+  const video = useRef<HTMLVideoElement>(null);
+  const [time, setTime] = useState(0);
+  const [chain, setChain] = useState(true);
+  // kịch bản vừa bấm: tắt "phát liên tiếp" thì dừng ở cuối kịch bản này
+  const picked = useRef<number | null>(null);
+  let current = -1;
+  SCENES.forEach((s, i) => { if (time >= s.start && time < SCENES_END) current = i; });
+  const end = (i: number) => SCENES[i + 1]?.start ?? SCENES_END;
+
+  const play = (i: number) => {
+    const v = video.current;
+    if (!v) return;
+    picked.current = i;
+    v.currentTime = SCENES[i].start;
+    setTime(SCENES[i].start);
+    void v.play().catch(() => {});
+  };
+  const onTime = () => {
+    const v = video.current;
+    if (!v) return;
+    setTime(v.currentTime);
+    const p = picked.current;
+    // timeupdate ~4 lần/giây nên dừng sớm một chút và lùi về ngay trước mốc, để vẫn sáng kịch bản vừa xem
+    if (!chain && p !== null && v.currentTime >= end(p) - 0.3) {
+      picked.current = null;
+      v.pause();
+      v.currentTime = end(p) - 0.2;
+      setTime(end(p) - 0.2);
+    }
+  };
+  // người xem tự tua ra ngoài kịch bản đã chọn thì thôi không dừng nữa
+  const onSeeked = () => {
+    const v = video.current, p = picked.current;
+    if (v && p !== null && (v.currentTime < SCENES[p].start - 0.5 || v.currentTime >= end(p))) picked.current = null;
+  };
+
   return (
     <Section id="demo">
-      <SectionHead eyebrow="Xem nó làm việc" title="Năm kịch bản trong 1 phút 50 giây" />
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)]">
+      <SectionHead eyebrow="Xem nó làm việc" title="Năm kịch bản trong 2 phút 30 giây"
+        lead="Bấm một kịch bản để nhảy tới phần đó. Bật “Phát liên tiếp” thì video chạy sang kịch bản kế tiếp; tắt thì dừng ở cuối kịch bản vừa chọn." />
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)] lg:gap-10">
         <Frame>
-          <video className="block aspect-[16/10] w-full bg-sunk" controls preload="metadata" poster="/landing/demo-poster.webp" src="/landing/demo.mp4" aria-label="Video demo LVDA, năm kịch bản KB-1 đến KB-5" />
+          <video ref={video} className="block aspect-[16/10] w-full bg-sunk" controls preload="metadata" poster="/landing/demo-poster.webp" src="/landing/demo.mp4"
+            onTimeUpdate={onTime} onSeeked={onSeeked} aria-label="Video demo LVDA, năm kịch bản KB-1 đến KB-5 và kết quả đánh giá" />
         </Frame>
-        <ol className="space-y-5">
-          {SCENES.map(([k, t, d]) => (
-            <li key={k} className="flex gap-4">
-              <span className="mt-0.5 shrink-0 self-start rounded-md bg-accent-soft px-1.5 py-0.5 font-mono text-[12px] font-medium text-accent">{k}</span>
-              <div><div className="text-[15.5px] font-semibold">{t}</div><div className="mt-1 text-[14px] leading-[1.55] text-muted">{d}</div></div>
-            </li>
-          ))}
-        </ol>
+        <div className="flex flex-col gap-3">
+          <ol className="flex flex-col gap-1" aria-label="Các kịch bản trong video">
+            {SCENES.map((s, i) => {
+              const on = i === current;
+              const pct = time <= s.start ? 0 : Math.min(100, ((time - s.start) / (end(i) - s.start)) * 100);
+              return (
+                <li key={s.k}>
+                  <button onClick={() => play(i)} aria-current={on ? "step" : undefined}
+                    className={cx("group relative flex w-full gap-3.5 overflow-hidden rounded-lg border px-3 py-2.5 text-left transition-colors",
+                      on ? "border-accent-line bg-accent-soft" : "border-transparent hover:bg-hover")}>
+                    <span className={cx("mt-0.5 shrink-0 self-start rounded-md px-1.5 py-0.5 font-mono text-[12px] font-medium", on ? "bg-accent text-on-accent" : "bg-accent-soft text-accent")}>{s.k}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-baseline justify-between gap-3">
+                        <span className="text-[15px] font-semibold">{s.title}</span>
+                        <span className="flex shrink-0 items-center gap-1 font-mono text-[12px] text-faint group-hover:text-accent">
+                          <Play size={11} aria-hidden />{mmss(s.start)}
+                        </span>
+                      </span>
+                      <span className="mt-0.5 block text-[13.5px] leading-[1.5] text-muted">{s.desc}</span>
+                    </span>
+                    {pct > 0 && <span aria-hidden className="absolute bottom-0 left-0 h-[2px] bg-accent transition-[width] duration-200" style={{ width: `${pct}%` }} />}
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+          <label className="inline-flex cursor-pointer items-center gap-2.5 self-start px-3 text-[13.5px] text-ink-2">
+            <input type="checkbox" checked={chain} onChange={(e) => setChain(e.target.checked)} className="size-4 accent-[var(--color-accent)]" />
+            Phát liên tiếp các kịch bản
+          </label>
+        </div>
       </div>
     </Section>
   );
