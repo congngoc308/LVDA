@@ -18,7 +18,9 @@ from collections.abc import Iterator
 from datetime import UTC, datetime
 from typing import Any, Literal
 
+import sqlglot
 from pydantic import BaseModel, Field, model_validator
+from sqlglot import exp
 
 from lvda import config, db
 from lvda.agent import mock_llm
@@ -31,26 +33,32 @@ from lvda.verifier import verify
 
 KEY = "eval"
 Size = Literal["s", "m", "l", "xl"]
-Chart = Literal["number", "bar", "line", "table"]
+Chart = Literal["number", "gauge", "line", "area", "column", "cumulative", "heat", "bar", "donut", "stacked", "table"]
+Color = Literal["blue", "violet", "teal", "amber", "rose"]
 Period = Literal["all", "2017", "2018"]
 DimKey = Literal["month", "customer_state", "seller_state", "category", "payment_type"]
 
 SYSTEM_CARDS: list[dict[str, str]] = [
-    {"id": "sys:queue", "title": "Cần duyệt", "size": "xl"},
-    {"id": "sys:kpis", "title": "30 ngày qua", "size": "xl"},
-    {"id": "sys:per_day", "title": "Số câu theo ngày", "size": "l"},
-    {"id": "sys:top_rules", "title": "Lỗi agent hay mắc", "size": "s"},
-    {"id": "sys:by_metric", "title": "Chỉ số được hỏi nhiều nhất", "size": "l"},
-    {"id": "sys:verifier", "title": "Độ tin cậy của bộ kiểm định", "size": "s"},
+    {"id": "sys:attention", "title": "Cần bạn xử lý", "size": "l"},
+    {"id": "sys:mix", "title": "Phán quyết 30 ngày", "size": "s"},
+    {"id": "sys:kpis", "title": "Chỉ số vận hành", "size": "xl"},
+    {"id": "sys:trend", "title": "Xu hướng theo ngày", "size": "l"},
+    {"id": "sys:funnel", "title": "Từ câu hỏi tới con số", "size": "s"},
+    {"id": "sys:rules", "title": "Lỗi agent hay mắc", "size": "m"},
+    {"id": "sys:heatmap", "title": "Chỉ số × phán quyết", "size": "m"},
+    {"id": "sys:verifier", "title": "Độ tin cậy của bộ kiểm định", "size": "xl"},
 ]
 SYSTEM_IDS = {c["id"] for c in SYSTEM_CARDS}
+# id card hệ thống của bản trước → card thay thế, để dashboard đã lưu vẫn mở và lưu lại được
+LEGACY_SYSTEM = {"sys:queue": "sys:attention", "sys:per_day": "sys:trend", "sys:top_rules": "sys:rules", "sys:by_metric": "sys:heatmap"}
 PERIODS: dict[str, dict[str, str] | None] = {
     "all": None,
     "2017": {"start": "2017-01-01", "end": "2018-01-01", "label": "năm 2017"},
     "2018": {"start": "2018-01-01", "end": "2019-01-01", "label": "năm 2018"},
 }
 PERIOD_LABEL = {"all": "Toàn bộ dữ liệu", "2017": "Năm 2017", "2018": "Năm 2018"}
-CHART_LABEL = {"number": "Số lớn", "bar": "Cột ngang", "line": "Đường theo tháng", "table": "Bảng"}
+CHART_LABEL = {"number": "Số lớn", "gauge": "Đồng hồ", "line": "Đường", "area": "Vùng", "column": "Cột dọc", "cumulative": "Lũy kế",
+               "heat": "Dải nhiệt", "bar": "Cột ngang", "donut": "Vòng tỉ trọng", "stacked": "Thanh tỉ trọng", "table": "Bảng"}
 MAX_CARDS = 30
 
 
@@ -64,6 +72,9 @@ class CardSpec(BaseModel):
     chart: Chart = "number"
     top: int | None = Field(None, ge=1, le=30)
     why: str | None = Field(None, max_length=300)
+    color: Color = "blue"
+    sort: Literal["desc", "asc"] = "desc"
+    compare: bool = False  # so với cùng kỳ năm trước; chỉ có tác dụng với năm 2018, số lớn hoặc theo tháng
 
 
 class LayoutItem(BaseModel):
@@ -99,14 +110,32 @@ def new_card_id() -> str:
     return "c_" + secrets.token_hex(5)
 
 
-def chart_problem(dimension: str | None, chart: str) -> str | None:
-    """Kiểu biểu đồ phải hợp với dạng dữ liệu: một số → số lớn; theo tháng → đường/bảng; theo nhóm → cột/bảng."""
+def is_additive(metric: dict[str, Any]) -> bool:
+    """Chỉ số cộng dồn được (SUM/COUNT) mới có lũy kế và tỉ trọng; trung bình hay tỉ lệ thì cộng lại vô nghĩa."""
+    try:
+        sel = sqlglot.parse_one(metric["canonical_sql"], read="postgres").selects[0]
+    except (sqlglot.errors.ParseError, IndexError):
+        return False
+    return isinstance(sel.unalias(), (exp.Sum, exp.Count))
+
+
+def chart_problem(dimension: str | None, chart: str, metric: dict[str, Any] | None = None) -> str | None:
+    """Kiểu biểu đồ phải hợp với dạng dữ liệu: một số → số lớn (tỉ lệ, điểm thêm đồng hồ); theo tháng → đường, vùng,
+    cột dọc, lũy kế, dải nhiệt, bảng; theo nhóm → cột, vòng và thanh tỉ trọng, bảng. Lũy kế và tỉ trọng chỉ dùng
+    cho chỉ số cộng dồn được."""
     if dimension is None:
+        if chart == "gauge":
+            ratio = metric is None or metric.get("format") in ("percent", "score")
+            return None if ratio else "Đồng hồ chỉ dùng cho tỉ lệ hoặc điểm (có thang cố định)."
         return None if chart == "number" else "Không chia theo chiều nào thì chỉ hiển thị được dạng số lớn."
-    if chart == "number":
+    if chart in ("number", "gauge"):
         return "Đã chia theo chiều thì cần biểu đồ hoặc bảng, không dùng số lớn."
-    if chart == "line" and dimension != "month":
-        return "Biểu đồ đường chỉ dùng cho chiều thời gian (theo tháng)."
+    if chart in ("line", "area", "cumulative", "heat") and dimension != "month":
+        return f"Biểu đồ {CHART_LABEL[chart].lower()} chỉ dùng cho chiều thời gian (theo tháng)."
+    if chart in ("bar", "donut", "stacked") and dimension == "month":
+        return f"Biểu đồ {CHART_LABEL[chart].lower()} dùng khi chia theo nhóm, không dùng cho chiều tháng."
+    if chart in ("cumulative", "stacked") and metric is not None and not is_additive(metric):
+        return f"“{metric['name_vi']}” không cộng dồn được nên không vẽ {CHART_LABEL[chart].lower()}."
     return None
 
 
@@ -120,7 +149,7 @@ def check_card(card: CardSpec, metrics: dict[str, dict[str, Any]]) -> str | None
         return f"Chỉ số “{m['name_vi']}” đang ở trạng thái {state}, chưa dùng được cho dashboard."
     if card.dimension and not mock_llm.supports(m, card.dimension):
         return f"Chưa hỗ trợ chia “{m['name_vi']}” theo {DIMENSIONS[card.dimension]['label'].lower()}."
-    return chart_problem(card.dimension, card.chart)
+    return chart_problem(card.dimension, card.chart, m)
 
 
 # ---------------------------------------------------------------- lưu trữ
@@ -134,7 +163,12 @@ def load(database_id: int) -> dict[str, Any]:
     if row is None:
         return {"layout": default_layout(), "cards": [], "tray": [], "updated_at": None, "updated_by_name": None,
                 "system": SYSTEM_CARDS}
-    layout = list(row["layout"])
+    layout: list[dict[str, Any]] = []
+    for item in row["layout"]:
+        sid = LEGACY_SYSTEM.get(item["id"], item["id"])
+        if (sid.startswith("sys:") and sid not in SYSTEM_IDS) or any(i["id"] == sid for i in layout):
+            continue
+        layout.append({**item, "id": sid})
     present = {i["id"] for i in layout}
     # card hệ thống mới thêm ở phiên bản sau: chèn vào cuối để không biến mất khỏi dashboard cũ
     layout += [{"id": c["id"], "size": c["size"], "collapsed": False} for c in SYSTEM_CARDS if c["id"] not in present]
@@ -164,35 +198,68 @@ def options(database_id: int) -> dict[str, Any]:
         if m["status"] != "certified":
             continue
         dims = [d for d in DIMENSIONS if mock_llm.supports(m, d)]
-        out.append({"id": m["id"], "name_vi": m["name_vi"], "format": m.get("format"), "unit": m.get("unit"), "dimensions": dims})
+        out.append({"id": m["id"], "name_vi": m["name_vi"], "format": m.get("format"), "unit": m.get("unit"), "dimensions": dims,
+                    "additive": is_additive(m)})
     return {"metrics": out, "dimensions": {k: v["label"] for k, v in DIMENSIONS.items()},
             "periods": PERIOD_LABEL, "charts": CHART_LABEL}
 
 
 # ---------------------------------------------------------------- hiển thị một card
+def _interp(card: CardSpec, dimension: str | None, time: dict[str, str] | None) -> dict[str, Any]:
+    top = {"n": card.top or 10, "order": card.sort} if dimension and dimension != "month" else None
+    return {"dimension": dimension, "time": time, "top": top}
+
+
+def _checked(database_id: int, m: dict[str, Any], interp: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    sql = mock_llm.reference_sql(m, interp)
+    return sql, verify(sql, catalog_for(database_id), m, get_settings(database_id))
+
+
+def _blocked(v: dict[str, Any]) -> bool:
+    return v["verdict"] in ("red", "blocked") or not v["executable"]
+
+
+def _previous(database_id: int, card: CardSpec, m: dict[str, Any]) -> dict[str, Any] | None:
+    """Cùng kỳ năm 2017 cho card năm 2018. Dữ liệu 2018 chỉ có tới một tháng nào đó, nên số lớn so với đúng
+    các tháng đó của 2017 chứ không so cả năm. SQL kỳ trước cũng qua bộ kiểm định; bị chặn thì bỏ phần so sánh."""
+    if card.dimension == "month":
+        sql, v = _checked(database_id, m, _interp(card, "month", PERIODS["2017"]))
+        return None if _blocked(v) else {"label": "Cùng kỳ 2017", "rows": db.run_readonly(sql, max_rows=200)["rows"]}
+    sql, v = _checked(database_id, m, _interp(card, "month", PERIODS["2018"]))
+    if _blocked(v):
+        return None
+    months = [str(r[0])[:7] for r in db.run_readonly(sql, max_rows=200)["rows"] if r[0] is not None]
+    if not months:
+        return None
+    last = int(max(months)[5:7])
+    end = f"2017-{last + 1:02d}-01" if last < 12 else "2018-01-01"
+    sql, v = _checked(database_id, m, _interp(card, None, {"start": "2017-01-01", "end": end, "label": "cùng kỳ 2017"}))
+    return None if _blocked(v) else {"label": f"cùng kỳ 2017 (T1–T{last})", "rows": db.run_readonly(sql, max_rows=1)["rows"]}
+
+
 def render(database_id: int, card: CardSpec) -> dict[str, Any]:
     metrics = {m["id"]: m for m in list_metrics(database_id)}
     m = metrics.get(card.metric_id)
     base: dict[str, Any] = {"checked_at": datetime.now(UTC).isoformat(), "period_label": PERIOD_LABEL[card.period]}
     if m is None:
         return {**base, "status": "error", "message": f"Không có chỉ số {card.metric_id}."}
-    base["metric"] = {"id": m["id"], "name_vi": m["name_vi"], "format": m.get("format"), "unit": m.get("unit"), "version": m["version"]}
+    base["metric"] = {"id": m["id"], "name_vi": m["name_vi"], "format": m.get("format"), "unit": m.get("unit"), "version": m["version"],
+                      "additive": is_additive(m)}
     problem = check_card(card, metrics)
     if problem:
         return {**base, "status": "stale" if m["status"] == "stale" else "invalid", "message": problem}
-    interp: dict[str, Any] = {"dimension": card.dimension, "time": PERIODS[card.period],
-                              "top": {"n": card.top or 10, "order": "desc"} if card.dimension and card.dimension != "month" else None}
-    sql = mock_llm.reference_sql(m, interp)
-    v = verify(sql, catalog_for(database_id), m, get_settings(database_id))
+    sql, v = _checked(database_id, m, _interp(card, card.dimension, PERIODS[card.period]))
     rules = [f["rule"] for f in v["findings"] if f["severity"] != "info"]
     base.update(verdict=v["verdict"], rules=rules, sql=sql)
-    if v["verdict"] in ("red", "blocked") or not v["executable"]:
+    if _blocked(v):
         return {**base, "status": "held", "message": "Bộ kiểm định chặn câu SQL của card này, không hiển thị số."}
     try:
         res = db.run_readonly(sql, max_rows=200)
+        compare = card.compare and card.period == "2018" and card.dimension in (None, "month")
+        previous = _previous(database_id, card, m) if compare else None
     except Exception as e:  # noqa: BLE001 - lỗi chạy SQL chỉ làm hỏng một card, không làm hỏng cả trang
         return {**base, "status": "error", "message": f"Lỗi khi chạy truy vấn: {str(e).splitlines()[0][:200]}"}
-    return {**base, "status": "ok", "columns": res["columns"], "rows": res["rows"]}
+    return {**base, "status": "ok", "columns": res["columns"], "rows": res["rows"], "previous": previous}
 
 
 # ---------------------------------------------------------------- agent sinh dashboard

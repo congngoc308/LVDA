@@ -114,12 +114,28 @@ def stats(db_id: int, days: int = 30, m: Member = Depends(engineer)):
         SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS day, count(*) AS runs,
                count(*) FILTER (WHERE final_verdict = 'green') AS green,
                count(*) FILTER (WHERE final_verdict = 'yellow') AS yellow,
-               count(*) FILTER (WHERE final_verdict = 'red') AS red
+               count(*) FILTER (WHERE final_verdict = 'red') AS red,
+               count(*) FILTER (WHERE status = 'held') AS held,
+               count(*) FILTER (WHERE (feedback->>'correct')::boolean = false) AS down,
+               percentile_cont(0.5) WITHIN GROUP (ORDER BY (usage->>'latency_ms')::numeric) AS p50_ms
         FROM app.qa_runs WHERE {where} GROUP BY 1 ORDER BY 1""", p)
+    # tự sửa theo ngày: câu Đỏ ở lần viết đầu và bao nhiêu câu trong đó về được Xanh/Vàng
+    fix_by_day = {r["day"]: r for r in db.fetch_all("""
+        SELECT to_char(date_trunc('day', r.created_at), 'YYYY-MM-DD') AS day,
+               count(*) FILTER (WHERE a.verdict = 'red') AS red_first,
+               count(*) FILTER (WHERE a.verdict = 'red' AND r.final_verdict IN ('green','yellow')) AS fixed
+        FROM app.qa_runs r JOIN app.qa_attempts a ON a.run_id = r.id AND a.attempt_no = 0
+        WHERE r.database_id = %s AND r.created_at > now() - make_interval(days => %s) AND r.input_kind = 'question'
+        GROUP BY 1""", p)}
+    for d in per_day:
+        f = fix_by_day.get(d["day"])
+        d["red_first"], d["fixed"] = (f["red_first"], f["fixed"]) if f else (0, 0)
     # Chỉ số nào được hỏi nhiều, và bao nhiêu câu trong đó thật sự Xanh hay bị báo sai
     by_metric = db.fetch_all("""
         SELECT r.metric_id AS id, max(m.name_vi) AS name_vi, count(*) AS questions,
                count(*) FILTER (WHERE r.status = 'answered' AND r.final_verdict = 'green') AS green,
+               count(*) FILTER (WHERE r.status = 'answered' AND r.final_verdict = 'yellow') AS yellow,
+               count(*) FILTER (WHERE r.status <> 'held' AND r.final_verdict IN ('red', 'blocked')) AS red,
                count(*) FILTER (WHERE r.status = 'held') AS held,
                count(*) FILTER (WHERE (r.feedback->>'correct')::boolean = false) AS flagged
         FROM app.qa_runs r LEFT JOIN app.metrics m ON m.database_id = r.database_id AND m.id = r.metric_id

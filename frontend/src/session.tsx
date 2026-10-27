@@ -11,7 +11,8 @@ interface Session {
   canConnect: boolean; // engineer ở đâu đó thì được kết nối nguồn mới
 
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, remember?: boolean) => Promise<void>;
+  register: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
   selectDb: (id: number) => void;
@@ -49,8 +50,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("lvda:logout", onLogout);
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, remember = true) => {
     const res = await api<{ token: string }>("/auth/login", { body: { email, password } });
+    setToken(res.token, remember);
+    setLoading(true);
+    await refresh();
+  }, [refresh]);
+
+  const register = useCallback(async (email: string, password: string, name?: string) => {
+    const res = await api<{ token: string }>("/auth/register", { body: { email, password, name } });
     setToken(res.token);
     setLoading(true);
     await refresh();
@@ -66,8 +74,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const active = databases.filter((d) => !d.expired);
   const db = active.find((d) => d.id === dbId) ?? active[0] ?? null;
 
-  const value = useMemo(() => ({ user, databases, db, canConnect, loading, login, logout, refresh, selectDb }),
-    [user, databases, db, canConnect, loading, login, logout, refresh, selectDb]);
+  const value = useMemo(() => ({ user, databases, db, canConnect, loading, login, register, logout, refresh, selectDb }),
+    [user, databases, db, canConnect, loading, login, register, logout, refresh, selectDb]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

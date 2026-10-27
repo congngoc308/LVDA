@@ -104,10 +104,7 @@ export function LinksPanel({ links, dbId, act }: { links: LinkRow[]; dbId: numbe
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-4 rounded-[10px] border border-line bg-surface p-5">
-        <div className="flex flex-col gap-1">
-          <span className="text-[15px] font-semibold">Tạo link chia sẻ</span>
-          <span className="text-[12.5px] leading-[1.6] text-faint">Người nhận phải đăng nhập để dùng link. Link engineer không có quyền chứng nhận, quản lý thành viên hay tạo link khác.</span>
-        </div>
+        <span className="text-[15px] font-semibold">Tạo link chia sẻ</span>
         <div className="flex flex-wrap items-end gap-5">
           <div className="flex flex-col gap-1.5"><span className="text-[12px] text-faint">Quyền</span>
             <Segmented label="Quyền" value={role} onChange={setRole} options={[["viewer", "Xem và hỏi"], ["engineer", "Sửa"]]} /></div>

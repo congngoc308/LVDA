@@ -1,4 +1,3 @@
-import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { api } from "../api";
@@ -16,8 +15,10 @@ export default function SharePage() {
   const [params, setParams] = useSearchParams();
   const { hash } = useLocation();
   const want = params.get("tab") ?? hash.slice(1); // #audit: đường dẫn cũ
-  const tab: Tab = want === "audit" ? "audit" : want === "links" && canManage ? "links" : "members";
-  const go = (t: Tab) => setParams(t === "members" ? {} : { tab: t }, { replace: true });
+  // tab đầu (mặc định) là Link chia sẻ; ai không quản lý link thì mặc định Thành viên
+  const first: Tab = canManage ? "links" : "members";
+  const tab: Tab = want === "audit" ? "audit" : want === "members" ? "members" : want === "links" && canManage ? "links" : first;
+  const go = (t: Tab) => setParams(t === first ? {} : { tab: t }, { replace: true });
 
   const [members, setMembers] = useState<MemberRow[] | null>(null);
   const [links, setLinks] = useState<LinkRow[]>([]);
@@ -38,21 +39,15 @@ export default function SharePage() {
   if (!db) return null;
 
   const tabs: [Tab, string, number | undefined][] = [
-    ["members", "Thành viên", members?.length], ...(canManage ? [["links", "Link chia sẻ", links.filter((l) => l.state === "active").length] as [Tab, string, number]] : []),
-    ["audit", "Nhật ký", events?.length],
+    ...(canManage ? [["links", "Link chia sẻ", links.filter((l) => l.state === "active").length] as [Tab, string, number]] : []),
+    ["members", "Thành viên", members?.length], ["audit", "Nhật ký", events?.length],
   ];
   const loading = <div className="flex flex-col gap-2 rounded-[10px] border border-line bg-surface p-5">{[0, 1, 2, 3].map((i) => <div key={i} className="h-9 animate-pulse rounded bg-sunk" />)}</div>;
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-14 shrink-0 items-center border-b border-line px-6">
-        <h1 className="whitespace-nowrap text-[17px] font-semibold tracking-[-0.01em]">Chia sẻ &amp; nhật ký</h1>
-      </header>
       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto flex max-w-[1040px] flex-col gap-5 px-8 pb-14 pt-6">
-          <p className="max-w-[760px] text-[13.5px] leading-[1.6] text-muted">
-            Quyền gắn với từng database. Link chia sẻ có hạn, thu hồi được, và không cấp được quyền chứng nhận chỉ số. Mọi thao tác đều được ghi lại.
-          </p>
+        <div className="mx-auto flex max-w-[1100px] flex-col gap-5 px-4 pb-14 pt-9 md:px-8">
           {!canManage && <p className="rounded-md bg-sunk px-3 py-2 text-[13px] text-muted">Bạn có quyền engineer qua link nên chỉ xem được. Quản lý thành viên và link cần engineer được gán trực tiếp.</p>}
           <ErrorNote>{error}</ErrorNote>
 
@@ -63,12 +58,6 @@ export default function SharePage() {
                 {l}<span className="font-mono text-[12px] text-dim">{n ?? ""}</span>
               </button>
             ))}
-            <span className="flex-1" />
-            {canManage && tab !== "links" && (
-              <button onClick={() => go("links")} className="flex h-8 items-center gap-[7px] whitespace-nowrap rounded-md bg-accent px-3.5 text-[13px] font-medium text-on-accent hover:bg-accent-2">
-                <Plus size={13} strokeWidth={2.4} /> Tạo link chia sẻ
-              </button>
-            )}
           </div>
 
           {tab === "members" && (members ? <MembersTable members={members} canManage={canManage} selfId={user?.id} dbId={db.id} act={act} /> : loading)}

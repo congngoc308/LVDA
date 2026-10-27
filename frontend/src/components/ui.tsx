@@ -46,8 +46,8 @@ export function VerdictStamp({ verdict, held = false, size = "md" }: { verdict: 
   const meta = VERDICT_META[held ? "held" : verdict] ?? VERDICT_META.unchecked;
   const { Icon } = meta;
   return (
-    <span className={cx("inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[5px] font-medium",
-      size === "sm" ? "h-5 px-1.5 text-[11.5px]" : "h-6 px-[9px] text-[12px]", meta.soft)}>
+    <span className={cx("inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap font-medium",
+      size === "sm" ? "h-5 rounded-[5px] px-1.5 text-[11.5px]" : "h-[26px] rounded-md border border-current/25 px-2.5 text-[12px] font-semibold", meta.soft)}>
       {verdict === "green" && !held ? <Check size={size === "sm" ? 10 : 11} strokeWidth={2.8} aria-hidden /> : <Icon size={size === "sm" ? 11 : 12} strokeWidth={2.2} aria-hidden />}
       {size === "md" ? `Đã kiểm · ${meta.label}` : meta.label}
     </span>
@@ -96,7 +96,7 @@ export function Empty({ icon, title, children }: { icon?: ReactNode; title: stri
   );
 }
 
-export function Drawer({ open, onClose, title, children, width = 560 }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; width?: number }) {
+export function Drawer({ open, onClose, title, children, footer, width = 560 }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; footer?: ReactNode; width?: number }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -112,6 +112,7 @@ export function Drawer({ open, onClose, title, children, width = 560 }: { open: 
           <button className="grid size-[30px] place-items-center rounded-md text-muted hover:bg-line hover:text-ink" onClick={onClose} aria-label="Đóng" title="Đóng"><X size={15} /></button>
         </div>
         <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">{children}</div>
+        {footer && <div className="flex justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>}
       </aside>
     </div>
   );

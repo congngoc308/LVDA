@@ -1,10 +1,15 @@
 const TOKEN_KEY = "lvda.token";
 
 export function getToken(): string | null {
-  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+  try { return localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY); } catch { return null; }
 }
-export function setToken(t: string | null) {
-  try { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); } catch { /* bỏ qua */ }
+/** remember = false ("Ghi nhớ đăng nhập" bỏ tích): token chỉ sống trong tab này, đóng trình duyệt là phải đăng nhập lại. */
+export function setToken(t: string | null, remember = true) {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    if (t) (remember ? localStorage : sessionStorage).setItem(TOKEN_KEY, t);
+  } catch { /* bỏ qua */ }
 }
 
 export class ApiError extends Error {

@@ -101,3 +101,21 @@ def test_trace_has_request_id(viewer):
     r = client.post("/api/db/1/ask", headers=viewer, json={"question": "Tỉ lệ hủy năm 2018"}).json()
     assert r["request_id"] and r["usage"]["steps"]
     assert {s["step"] for s in r["usage"]["steps"]} >= {"interpret", "generate_sql", "verify", "execute"}
+
+
+def test_register_creates_account_without_access():
+    email = "dangky-test@lvda.dev"
+    db.execute("DELETE FROM app.users WHERE email = %s", (email,))
+    try:
+        assert client.post("/api/auth/register", json={"email": email, "password": "ngan"}).status_code == 422
+        assert client.post("/api/auth/register", json={"email": "khong-hop-le", "password": "dai-du-8-ky-tu"}).status_code == 422
+        r = client.post("/api/auth/register", json={"email": email, "password": "dai-du-8-ky-tu", "name": " "})
+        assert r.status_code == 201, r.text
+        assert r.json()["user"]["name"] == "dangky-test"
+        me = client.get("/api/auth/me", headers={"Authorization": f"Bearer {r.json()['token']}"}).json()
+        assert me["databases"] == [] and me["can_connect"] is False
+        dup = client.post("/api/auth/register", json={"email": email.upper(), "password": "dai-du-8-ky-tu"})
+        assert dup.status_code == 409
+        assert client.post("/api/auth/login", json={"email": email, "password": "dai-du-8-ky-tu"}).status_code == 200
+    finally:
+        db.execute("DELETE FROM app.users WHERE email = %s", (email,))

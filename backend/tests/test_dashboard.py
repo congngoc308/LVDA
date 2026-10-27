@@ -83,3 +83,42 @@ def test_focus_puts_mentioned_metric_first(eng):
 
 def test_dashboard_is_engineer_only():
     assert client.get("/api/db/1/dashboards/eval", headers=login("analyst@lvda.dev")).status_code == 403
+
+
+def test_chart_kinds_follow_metric_shape():
+    gmv = {"name_vi": "Doanh thu gộp", "format": "currency", "canonical_sql": "SELECT SUM(o.payment_value) AS gmv FROM mart.fct_orders AS o"}
+    late = {"name_vi": "Tỉ lệ giao trễ", "format": "percent", "canonical_sql": "SELECT AVG(CASE WHEN o.late THEN 1 ELSE 0 END) AS r FROM mart.fct_orders AS o"}
+    assert dashboard.chart_problem(None, "gauge", late) is None
+    assert dashboard.chart_problem(None, "gauge", gmv)  # đồng hồ cần thang cố định
+    assert dashboard.chart_problem("month", "cumulative", gmv) is None
+    assert dashboard.chart_problem("month", "cumulative", late)  # tỉ lệ không cộng dồn được
+    assert dashboard.chart_problem("customer_state", "stacked", late)
+    assert dashboard.chart_problem("customer_state", "donut", gmv) is None
+    assert dashboard.chart_problem("month", "donut", gmv)
+    assert dashboard.chart_problem("customer_state", "heat", gmv)
+
+
+def test_old_system_cards_map_to_new_ones(eng):
+    from lvda import db
+    old = [{"id": i, "size": "m", "collapsed": False} for i in ("sys:queue", "sys:kpis", "sys:per_day", "sys:top_rules", "sys:by_metric", "sys:verifier")]
+    db.execute("""INSERT INTO app.dashboards (database_id, key, layout, cards, tray) VALUES (1, 'eval', %s, '[]', '[]')
+                  ON CONFLICT (database_id, key) DO UPDATE SET layout = EXCLUDED.layout""", (db.jsonb(old),))
+    board = client.get("/api/db/1/dashboards/eval", headers=eng).json()
+    ids = [i["id"] for i in board["layout"]]
+    assert ids[:6] == ["sys:attention", "sys:kpis", "sys:trend", "sys:rules", "sys:heatmap", "sys:verifier"]
+    assert set(ids) == dashboard.SYSTEM_IDS
+    r = client.put("/api/db/1/dashboards/eval", json={"layout": board["layout"], "cards": [], "tray": []}, headers=eng)
+    assert r.status_code == 200
+
+
+def test_render_sorts_ascending_and_compares_same_period(eng):
+    top = client.post("/api/db/1/dashboards/render", headers=eng,
+                      json=card(dimension="customer_state", chart="bar", period="2018", top=3, sort="asc")).json()
+    vals = [float(r[1]) for r in top["rows"]]
+    assert top["status"] == "ok" and vals == sorted(vals) and len(vals) == 3
+    num = client.post("/api/db/1/dashboards/render", headers=eng, json=card(period="2018", compare=True)).json()
+    assert num["previous"] and num["previous"]["label"].startswith("cùng kỳ 2017") and len(num["previous"]["rows"]) == 1
+    month = client.post("/api/db/1/dashboards/render", headers=eng, json=card(dimension="month", chart="area", period="2018", compare=True)).json()
+    assert len(month["previous"]["rows"]) == 12
+    off = client.post("/api/db/1/dashboards/render", headers=eng, json=card(period="2017", compare=True)).json()
+    assert off["previous"] is None  # 2017 không có kỳ trước trong dữ liệu

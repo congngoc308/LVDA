@@ -12,7 +12,9 @@ const isSqlText = (t: string) => /^\s*(select|with)\b/i.test(t);
 export const Composer = forwardRef<ComposerHandle, {
   onSubmit: (text: string, opts: { simulate: boolean; metricId: string | null }) => void;
   busy: boolean; context: Run | null; clearContext: () => void; metrics: MetricLite[];
-}>(function Composer({ onSubmit, busy, context, clearContext, metrics }, ref) {
+  /** ô hỏi ở cuối phiên đang mở: lời gợi ý ngắn hơn, bỏ phím tắt "/" */
+  followUp?: boolean;
+}>(function Composer({ onSubmit, busy, context, clearContext, metrics, followUp = false }, ref) {
   const { db } = useSession();
   const [text, setText] = useState("");
   const [simulate, setSimulate] = useState(true);
@@ -53,9 +55,9 @@ export const Composer = forwardRef<ComposerHandle, {
   };
 
   return (
-    <div className="rounded-[10px] border border-edge bg-sunk focus-within:border-edge-focus">
+    <div className="flex flex-col rounded-[14px] border border-edge bg-surface focus-within:border-edge-focus">
       {(context || interp || sql) && (
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-line px-3.5 py-2 text-[12.5px]">
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-line px-4 py-2 text-[12.5px]">
           {context && !sql && (
             <span className="inline-flex items-center gap-1 rounded bg-raised px-1.5 py-0.5 text-ink-2">
               <CornerDownRight size={12} /> Hỏi tiếp: <span className="max-w-[220px] truncate">{context.question}</span>
@@ -96,27 +98,27 @@ export const Composer = forwardRef<ComposerHandle, {
           ) : null}
         </div>
       )}
-      <div className="flex items-end gap-2.5 pb-2 pl-3.5 pr-3 pt-3">
+      <div className="flex items-start gap-2.5 pb-2.5 pl-4 pr-3.5 pt-3.5">
         <textarea ref={ta} value={text} onChange={(e) => setText(e.target.value)} rows={2}
           onKeyDown={(e) => {
             if (e.key === "Enter" && ((!sql && !e.shiftKey) || e.ctrlKey || e.metaKey)) { e.preventDefault(); submit(); }
           }}
-          placeholder="Hỏi một con số, ví dụ “Doanh thu theo bang tháng 3/2018”, hoặc dán một câu SQL để kiểm"
+          placeholder={followUp ? "Hỏi tiếp, hoặc dán một câu SQL để kiểm" : "Hỏi một con số, ví dụ “Doanh thu theo bang tháng 3/2018”, hoặc dán một câu SQL để kiểm"}
           aria-label="Câu hỏi hoặc câu SQL"
           className={cx("scroll-thin max-h-80 min-h-[44px] flex-1 resize-none bg-transparent outline-none focus-visible:outline-none",
             sql ? "font-mono text-[13px] leading-[1.55]" : "text-[14.5px] leading-[1.55]")} />
         <button onClick={submit} disabled={!text.trim() || busy} aria-label="Gửi" title="Gửi"
-          className={cx("grid size-8 shrink-0 place-items-center rounded-md transition-colors", text.trim() && !busy ? "bg-accent text-on-accent hover:bg-accent-2" : "bg-line text-dim")}>
-          <ArrowUp size={15} strokeWidth={2.2} />
+          className={cx("grid size-10 shrink-0 place-items-center rounded-[10px] transition-colors", text.trim() && !busy ? "bg-accent text-on-accent hover:bg-accent-2" : "bg-line text-dim")}>
+          <ArrowUp size={17} strokeWidth={2.2} />
         </button>
       </div>
-      <div className="flex flex-wrap items-center gap-3 border-t border-line px-3.5 py-2 text-[12px] text-muted">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-line px-4 py-2.5 text-[12px] text-muted">
         <label className="inline-flex cursor-pointer items-center gap-2 whitespace-nowrap" title="Bật để LLM giả lập mắc các lỗi điển hình của text-to-SQL ở lần thử đầu, nhằm thấy bộ kiểm định và vòng tự sửa làm việc.">
           <input type="checkbox" className="peer sr-only" checked={simulate} onChange={(e) => setSimulate(e.target.checked)} />
           <span data-on={simulate} className="lv-switch peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent data-[on=true]:bg-warn" />
           LLM mô phỏng hay mắc lỗi
         </label>
-        <span className="ml-auto hidden whitespace-nowrap text-[11.5px] text-dim lg:inline">{sql ? "Ctrl+Enter để kiểm" : "Enter gửi · Shift+Enter xuống dòng · / để gõ"}</span>
+        <span className="hidden whitespace-nowrap text-[11px] text-dim sm:inline">{sql ? "Ctrl+Enter để kiểm" : followUp ? "Enter gửi · Shift+Enter xuống dòng" : "Enter gửi · Shift+Enter xuống dòng · / để gõ"}</span>
       </div>
     </div>
   );

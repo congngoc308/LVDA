@@ -1,6 +1,6 @@
-﻿import { Database, FlaskConical, LogOut, MessageSquareText, Moon, Network, Sun, Users } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+﻿import { ChevronDown, LogOut, Moon, SlidersHorizontal, Sun } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useSession } from "../session";
 import { useTheme } from "../theme";
@@ -34,11 +34,8 @@ export function LogoMark({ size = 30 }: { size?: number }) {
 export function Logo({ light = false }: { light?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <LogoMark />
-      <div className="flex flex-col leading-tight">
-        <span className="text-[14px] font-semibold tracking-[0.02em]">LVDA</span>
-        <span className={cx("text-[11.5px]", light ? "text-ink-2" : "text-faint")}>Hỏi số, có phiếu kiểm</span>
-      </div>
+      <LogoMark size={32} />
+      <span className={cx("text-[16px] font-bold tracking-[0.01em]", light && "text-ink")}>LVDA</span>
     </div>
   );
 }
@@ -52,14 +49,61 @@ export function ThemeToggle() {
   );
 }
 
+/** Menu tài khoản ở góc phải: vai trò, trạng thái LLM, giao diện sáng/tối, đăng xuất. */
+function UserMenu({ llm }: { llm: string | null }) {
+  const { user, db, logout } = useSession();
+  const [theme, setTheme] = useTheme();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("mousedown", away); window.addEventListener("keydown", esc);
+    return () => { window.removeEventListener("mousedown", away); window.removeEventListener("keydown", esc); };
+  }, [open]);
+  const [name, role] = (user?.name ?? "").split(/\s*\(/);
+  const mock = !llm || llm === "mock";
+  const item = "flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[13px] text-ink-2 hover:bg-hover hover:text-ink";
+  return (
+    <div ref={box} className="relative">
+      <button onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open}
+        className="flex h-9 items-center gap-2 rounded-lg pl-1 pr-1.5 hover:bg-hover">
+        <span className="grid size-[30px] place-items-center rounded-full bg-edge text-[13px] font-semibold" aria-hidden>{name.slice(0, 1)}</span>
+        <span className="hidden text-[13px] font-semibold lg:inline">{name}</span>
+        <ChevronDown size={14} className="text-faint" />
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 top-[calc(100%+6px)] z-40 w-[260px] rounded-xl border border-line bg-surface p-1.5 shadow-2xl">
+          <div className="flex flex-col gap-0.5 px-2.5 pb-2.5 pt-2">
+            <span className="text-[13.5px] font-semibold">{name}</span>
+            <span className="truncate text-[12px] text-faint">{role ? `${role.replace(/\)$/, "")} · ` : ""}{user?.email}</span>
+            {db && <span className="text-[12px] text-faint">Quyền trên {db.name.split(/\s*·\s*/)[0]}: <span className="font-mono text-ink-2">{db.role}</span></span>}
+          </div>
+          <div className="flex items-center gap-2 border-y border-line px-2.5 py-2 text-[12px] text-muted">
+            <span className={cx("size-1.5 rounded-full", mock ? "bg-warn" : "bg-accent")} />LLM: {mock ? "mô phỏng" : llm}
+          </div>
+          <div className="pt-1.5">
+            <button role="menuitem" className={item} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+              {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}{theme === "dark" ? "Giao diện sáng" : "Giao diện tối"}
+            </button>
+            <button role="menuitem" className={item} onClick={logout}><LogOut size={15} />Đăng xuất</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Shell({ children }: { children: ReactNode }) {
-  const { user, db, canConnect, logout } = useSession();
+  const { db, canConnect } = useSession();
+  const nav = useNavigate();
   const [pending, setPending] = useState<number | null>(null);
   const [stale, setStale] = useState<number | null>(null);
   const [llm, setLlm] = useState<string | null>(null);
   const eng = db?.role === "engineer";
   const [switcher, setSwitcher] = useState(false);
-  // số nguồn đang lỗi: hiện trên ô Database để thấy ngay mà không phải mở trang
+  // số nguồn đang lỗi: hiện trên ô database để thấy ngay mà không phải mở trang
   const [sourceErrors, setSourceErrors] = useState<number | null>(null);
   useEffect(() => {
     if (!canConnect) return;
@@ -83,73 +127,57 @@ export function Shell({ children }: { children: ReactNode }) {
     return () => { alive = false; clearInterval(t); window.removeEventListener("lvda:reviews-changed", load); };
   }, [db]);
 
-  // `also`: đường dẫn khác vẫn thuộc mục này (cấu hình agent và lần hỏi cũ nằm trong Hỏi & kiểm)
-  const items: { to: string; label: string; icon: ReactNode; end?: boolean; also?: string[]; badge?: number | null; show: boolean }[] = [
-    { to: "/", label: "Hỏi & kiểm", icon: <MessageSquareText size={16} strokeWidth={1.7} />, end: true, also: ["/runs", "/metrics", "/settings"], badge: eng ? stale : null, show: true },
-    { to: "/data", label: "Dữ liệu", icon: <Network size={16} strokeWidth={1.7} />, show: true },
-    { to: "/eval", label: "Đánh giá", icon: <FlaskConical size={16} strokeWidth={1.7} />, badge: pending, show: eng },
-    { to: "/share", label: "Chia sẻ & nhật ký", icon: <Users size={16} strokeWidth={1.7} />, show: eng },
+  // `also`: đường dẫn khác vẫn thuộc mục này (lần hỏi cũ nằm trong Hỏi & kiểm)
+  const items: { to: string; label: string; end?: boolean; also?: string[]; badge?: number | null; show: boolean }[] = [
+    { to: "/", label: "Hỏi & kiểm", end: true, also: ["/runs", "/metrics", "/settings"], badge: eng ? stale : null, show: true },
+    { to: "/eval", label: "Đánh giá", badge: pending, show: eng },
+    { to: "/data", label: "Dữ liệu", show: true },
+    { to: "/share", label: "Chia sẻ & nhật ký", show: eng },
   ];
 
-  const [name, role] = (user?.name ?? "").split(/\s*\(/);
   const [dbName, dbSub] = (db?.name ?? "").split(/\s*·\s*/);
-  const mock = !llm || llm === "mock";
+  const configOpen = pathname.startsWith("/metrics") || pathname.startsWith("/settings");
   return (
-    <div className="flex h-full">
-      <aside className="flex w-[232px] shrink-0 flex-col border-r border-line bg-sidebar">
-        <div className="flex h-14 shrink-0 items-center border-b border-line px-4"><Logo /></div>
-        <div className="flex flex-col gap-1.5 px-3 pb-2 pt-4">
-          <span className="px-2 text-[11px] font-medium text-dim">Database</span>
-          {/* cho biết đang ở database nào; bấm để mở cửa sổ chọn database (và lối vào trang quản lý nguồn) */}
-          <button type="button" onClick={() => setSwitcher(true)} title="Chọn database" aria-haspopup="dialog"
-            className={cx("flex items-center gap-2.5 rounded-lg border bg-sunk p-2 text-left hover:border-line-strong",
-              pathname.startsWith("/sources") ? "border-accent" : "border-line")}>
-            <Database size={16} strokeWidth={1.7} className="shrink-0 text-muted" />
-            <span className="flex min-w-0 flex-1 flex-col leading-[1.3]">
-              <span className="truncate text-[13px] font-medium">{dbName}</span>
-              <span className="truncate text-[11.5px] text-faint">{dbSub ?? (db?.has_source ? "đồng bộ từ nguồn" : "")}</span>
-            </span>
-            {sourceErrors
-              ? <span className="num mr-1 text-[11px] text-warn" title={`${sourceErrors} nguồn đang lỗi`}>{sourceErrors}</span>
-              : <span className="mr-1 size-1.5 shrink-0 rounded-full bg-accent" title="Đã kết nối" />}
-          </button>
-        </div>
-        <DatabaseSwitcher open={switcher} onClose={() => setSwitcher(false)} />
-        <nav className="flex flex-col gap-px px-3 py-2">
+    <div className="flex h-full flex-col">
+      <header className="z-20 flex h-16 shrink-0 items-center gap-5 whitespace-nowrap border-b border-line bg-sidebar px-4 md:px-6">
+        <button onClick={() => nav("/", { state: { home: Date.now() } })} className="shrink-0" aria-label="Về Hỏi & kiểm"><span className="hidden sm:block"><Logo /></span><span className="sm:hidden"><LogoMark size={32} /></span></button>
+        <nav className="scrollbar-none flex h-full min-w-0 flex-1 items-stretch gap-1 overflow-x-auto" aria-label="Mục chính">
           {items.filter((i) => i.show).map((i) => {
             const on = (p: boolean) => p || !!i.also?.some((x) => pathname.startsWith(x));
             return (
               <NavLink key={i.to} to={i.to} end={i.end}
-                className={({ isActive }) => cx("flex h-[34px] items-center gap-2.5 rounded-md px-2 text-[13.5px] transition-colors",
-                  on(isActive) ? "bg-accent font-medium text-on-accent" : "text-muted hover:bg-hover hover:text-ink")}>
-                {({ isActive }) => (
-                  <>
-                    {i.icon}<span className="flex-1">{i.label}</span>
-                    {!!i.badge && <span className={cx("num text-[11px]", on(isActive) ? "text-on-accent" : "text-warn")}>{i.badge}</span>}
-                  </>
-                )}
+                onClick={i.to === "/" ? (e) => { e.preventDefault(); nav("/", { state: { home: Date.now() } }); } : undefined}
+                className={({ isActive }) => cx("flex items-center gap-2 border-b-2 px-3.5 text-[14px] font-medium transition-colors",
+                  on(isActive) ? "border-accent text-ink" : "border-transparent text-faint hover:text-ink")}>
+                {i.label}
+                {!!i.badge && <span className="rounded bg-warn-soft px-1.5 py-px font-mono text-[11px] font-semibold text-warn">{i.badge}</span>}
               </NavLink>
             );
           })}
         </nav>
-        <div className="mt-auto flex flex-col gap-3 border-t border-line px-4 py-3">
-          <div className="flex items-center gap-2 text-[12px] text-muted">
-            <span className={cx("size-1.5 rounded-full", mock ? "bg-warn" : "bg-accent")} />LLM: {mock ? "mô phỏng" : llm}
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="grid size-7 shrink-0 place-items-center rounded-full bg-edge text-[12px] font-medium" aria-hidden>
-              {name.slice(0, 1)}
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col leading-[1.3]">
-              <span className="truncate text-[13px] font-medium">{name}</span>
-              <span className="truncate text-[11.5px] text-faint">{role ? `${role.replace(/\)$/, "")} · ` : ""}{user?.email}</span>
-            </div>
-            <ThemeToggle />
-            <button onClick={logout} className="grid size-7 place-items-center rounded-md text-faint hover:bg-hover hover:text-ink" aria-label="Đăng xuất" title="Đăng xuất"><LogOut size={15} /></button>
-          </div>
+        <div className="flex shrink-0 items-center gap-2.5">
+          {/* cho biết đang ở database nào; bấm để mở cửa sổ chọn database (và lối vào trang quản lý nguồn) */}
+          <button type="button" onClick={() => setSwitcher(true)} aria-haspopup="dialog" title={`${db?.name ?? ""} · bấm để đổi database`}
+            className={cx("flex h-9 max-w-[220px] items-center gap-2 rounded-lg border bg-surface px-3 hover:border-edge",
+              pathname.startsWith("/sources") ? "border-accent" : "border-line")}>
+            {sourceErrors
+              ? <span className="font-mono text-[11px] text-warn" title={`${sourceErrors} nguồn đang lỗi`}>{sourceErrors}</span>
+              : <span className="size-[7px] shrink-0 rounded-full bg-accent" />}
+            <span className="truncate text-[13px] font-semibold">{dbName}</span>
+            {dbSub && <span className="hidden truncate text-[12px] text-faint xl:inline">{dbSub}</span>}
+          </button>
+          {db && !db.catalog_only && (
+            <button onClick={() => nav("/metrics")} title="Chỉ số & cấu hình agent"
+              className={cx("hidden h-9 items-center gap-2 rounded-lg border bg-surface px-3 text-[13px] font-medium hover:bg-hover md:flex", configOpen ? "border-accent" : "border-line")}>
+              <SlidersHorizontal size={14} /> Chỉ số &amp; cấu hình
+            </button>
+          )}
+          <span className="h-6 w-px bg-line" />
+          <UserMenu llm={llm} />
         </div>
-      </aside>
-      <main className="min-w-0 flex-1 overflow-hidden bg-paper">{children}</main>
+      </header>
+      <DatabaseSwitcher open={switcher} onClose={() => setSwitcher(false)} />
+      <main className="min-h-0 flex-1 overflow-hidden bg-paper">{children}</main>
     </div>
   );
 }

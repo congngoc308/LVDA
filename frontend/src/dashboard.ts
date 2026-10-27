@@ -3,23 +3,27 @@ import { ApiError, getToken } from "./api";
 /** Dashboard trang Đánh giá: kiểu dữ liệu, gọi API, và các phép biến đổi bố cục (thuần, dùng được cho hoàn tác). */
 
 export type Size = "s" | "m" | "l" | "xl";
-export type Chart = "number" | "bar" | "line" | "table";
+export type Chart = "number" | "gauge" | "line" | "area" | "column" | "cumulative" | "heat" | "bar" | "donut" | "stacked" | "table";
+export type CardColor = "blue" | "violet" | "teal" | "amber" | "rose";
 export type Period = "all" | "2017" | "2018";
 export interface CardSpec {
   id: string; kind: "metric"; title: string; metric_id: string; dimension: string | null;
   period: Period; chart: Chart; top: number | null; why: string | null;
+  color?: CardColor; sort?: "desc" | "asc"; compare?: boolean;
 }
 export interface LayoutItem { id: string; size: Size; collapsed: boolean }
 export interface Board { layout: LayoutItem[]; cards: CardSpec[]; tray: CardSpec[] }
 export interface BoardRes extends Board { updated_at: string | null; updated_by_name: string | null; system: { id: string; title: string; size: Size }[] }
+export interface OptionMetric { id: string; name_vi: string; format: string | null; unit: string | null; dimensions: string[]; additive: boolean }
 export interface Options {
-  metrics: { id: string; name_vi: string; format: string | null; unit: string | null; dimensions: string[] }[];
+  metrics: OptionMetric[];
   dimensions: Record<string, string>; periods: Record<Period, string>; charts: Record<Chart, string>;
 }
 export interface RenderRes {
   status: "ok" | "held" | "stale" | "invalid" | "error"; message?: string; checked_at: string; period_label: string;
-  metric?: { id: string; name_vi: string; format: string | null; unit: string | null; version: number };
+  metric?: { id: string; name_vi: string; format: string | null; unit: string | null; version: number; additive: boolean };
   verdict?: string; rules?: string[]; sql?: string; columns?: string[]; rows?: unknown[][];
+  previous?: { label: string; rows: unknown[][] } | null; // cùng kỳ 2017 khi card bật so sánh
 }
 export type DraftEvent =
   | { type: "start"; request_id: string }
@@ -43,10 +47,19 @@ export function newCardId() {
 export function defaultChart(dimension: string | null): Chart {
   return dimension === null ? "number" : dimension === "month" ? "line" : "bar";
 }
-export function validCharts(dimension: string | null): Chart[] {
-  if (dimension === null) return ["number"];
-  return dimension === "month" ? ["line", "bar", "table"] : ["bar", "table"];
+// cùng thứ tự và luật với chart_problem ở backend: lũy kế và tỉ trọng chỉ cho chỉ số cộng dồn được
+export function validCharts(dimension: string | null, metric?: Pick<OptionMetric, "format" | "additive">): Chart[] {
+  const additive = metric?.additive ?? true;
+  if (dimension === null) return metric && (metric.format === "percent" || metric.format === "score") ? ["number", "gauge"] : ["number"];
+  if (dimension === "month") return ["line", "area", "column", ...(additive ? ["cumulative" as const] : []), "heat", "table"];
+  return ["bar", "column", "donut", ...(additive ? ["stacked" as const] : []), "table"];
 }
+/** Có so với cùng kỳ năm trước được không: chỉ năm 2018 (so 2017), số lớn hoặc theo tháng. */
+export const canCompare = (c: Pick<CardSpec, "period" | "dimension">) => c.period === "2018" && (c.dimension === null || c.dimension === "month");
+export const CARD_COLORS: Record<CardColor, { css: string; label: string }> = {
+  blue: { css: "var(--color-accent)", label: "Xanh dương" }, violet: { css: "oklch(0.64 0.15 295)", label: "Tím" },
+  teal: { css: "oklch(0.66 0.11 180)", label: "Ngọc" }, amber: { css: "oklch(0.72 0.14 65)", label: "Cam" }, rose: { css: "oklch(0.64 0.16 0)", label: "Hồng" },
+};
 
 // ---- phép biến đổi bố cục (không đổi đối tượng cũ)
 const without = <T extends { id: string }>(xs: T[], id: string) => xs.filter((x) => x.id !== id);

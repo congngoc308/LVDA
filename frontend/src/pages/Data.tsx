@@ -66,7 +66,7 @@ function HomeView({ home, recent }: { home: Home; recent: string[] }) {
   ];
   return (
     <div className="scroll-thin h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-[1080px] flex-col gap-10 px-8 pb-14 pt-8">
+      <div className="mx-auto flex max-w-[1320px] flex-col gap-10 px-4 pb-14 pt-6 md:px-8">
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] gap-3">
           {stats.map(([l, n]) => (
             <div key={l} className="flex flex-col gap-2.5 rounded-[10px] border border-line bg-surface px-[18px] py-4">
@@ -162,7 +162,7 @@ function ListView({ dbId, home, domain, q }: { dbId: number; home: Home; domain:
 
   return (
     <div className="scroll-thin h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-[1080px] flex-col gap-[18px] px-8 pb-14 pt-6">
+      <div className="mx-auto flex max-w-[1320px] flex-col gap-[18px] px-4 pb-14 pt-6 md:px-8">
         <Link to="/data" className="self-start whitespace-nowrap text-[12.5px] text-faint hover:text-ink">← Dữ liệu</Link>
         <div className="overflow-hidden rounded-[10px] border border-line bg-surface">
           <div className="flex flex-wrap items-baseline gap-3 px-5 pb-1 pt-[18px]">
@@ -323,9 +323,9 @@ export default function DataPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line px-6">
+      <header className={cx("flex shrink-0 items-center gap-3", focus ? "h-14 border-b border-line px-6" : "mx-auto w-full max-w-[1320px] px-4 pb-1 pt-7 md:px-8")}>
         <div className="flex min-w-0 flex-1 items-center gap-2.5 text-[13px] text-faint">
-          <button onClick={() => nav("/data")} className="whitespace-nowrap text-[17px] font-semibold tracking-[-0.01em] text-ink">Dữ liệu</button>
+          {(focus || domain || q) && <button onClick={() => nav("/data")} className="whitespace-nowrap text-[14px] font-medium text-ink-2 hover:text-ink">Tất cả bảng</button>}
           {focus && <span className="truncate font-mono text-[13px] text-faint">/ {focus}</span>}
           <SearchBox />
         </div>

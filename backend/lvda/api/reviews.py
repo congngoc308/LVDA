@@ -23,7 +23,8 @@ class DecisionBody(BaseModel):
 @router.get("")
 def queue(db_id: int, status: str = "pending", m: Member = Depends(engineer)):
     return db.fetch_all(
-        """SELECT r.id, r.question, r.final_verdict, r.status, r.metric_id, r.review_status, r.created_at, r.feedback,
+        """SELECT r.id, r.question, r.final_verdict, r.status, r.metric_id, r.review_status, r.created_at, r.feedback, r.input_kind,
+                  r.answer->'reconciliation'->>'status' AS recon_status,
                   u.name AS user_name, r.answer->>'headline' AS headline
            FROM app.qa_runs r LEFT JOIN app.users u ON u.id = r.user_id
            WHERE r.database_id = %s AND r.review_status = %s ORDER BY r.created_at DESC LIMIT 100""",

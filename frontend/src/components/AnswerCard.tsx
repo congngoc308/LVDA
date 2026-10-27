@@ -91,6 +91,8 @@ export function AnswerCard({ run, onFollowUp, onChange, onAskWith, compact = fal
   const [tab, setTab] = useState<Tab>(verdict === "green" || run.status === "definition" ? "lineage" : "checks");
   const [busy, setBusy] = useState(false);
   const [showAssume, setShowAssume] = useState(false);
+  // màn hỏi: câu Xanh thu gọn phiếu kiểm cho đỡ dài; câu có vấn đề (và màn duyệt) mở sẵn
+  const [checksOpen, setChecksOpen] = useState(!bubble || verdict !== "green");
   const navigate = useNavigate();
   const isSql = run.input_kind === "sql";
   const held = run.status === "held";
@@ -142,36 +144,36 @@ export function AnswerCard({ run, onFollowUp, onChange, onAskWith, compact = fal
   return (
     <div className="flex flex-col gap-4">
       {bubble && (
-        <div className="flex items-start justify-end gap-2.5">
-          <div className={cx("max-w-[80%] rounded-[10px_10px_2px_10px] bg-raised px-3.5 py-2.5 text-pretty text-ink",
+        <div className="flex items-start justify-end gap-3 pb-2 pt-4">
+          <div className={cx("max-w-[70%] rounded-xl bg-raised px-4 py-3 text-pretty text-ink",
             isSql ? "whitespace-pre-wrap break-words font-mono text-[12.5px] leading-[1.6]" : "text-[15px] leading-normal")}>{run.question}</div>
-          <div className="grid size-7 shrink-0 place-items-center rounded-full bg-edge text-[12px] font-semibold" aria-hidden>{initial}</div>
+          <div className="grid size-8 shrink-0 place-items-center rounded-full bg-raised text-[13px] font-semibold" aria-hidden>{initial}</div>
         </div>
       )}
 
-      <article className="overflow-hidden rounded-[10px] border border-line bg-surface">
-        <header className="flex flex-wrap items-center gap-2.5 border-b border-line px-4 py-2.5">
-          <div className="grid size-5 shrink-0 place-items-center rounded-[5px] bg-accent font-mono text-[10px] font-medium text-on-accent" aria-hidden>L</div>
+      <article className="overflow-hidden rounded-[14px] border border-line bg-surface">
+        <header className="flex flex-wrap items-center gap-2.5 border-b border-line px-[18px] py-3.5 text-[13px]">
+          <div className="grid size-5 shrink-0 place-items-center rounded-[5px] bg-accent-soft font-mono text-[11px] font-semibold text-accent" aria-hidden>L</div>
           {run.metric ? (
             <>
-              <span className="whitespace-nowrap text-[12.5px] text-muted">{isSql ? "Kiểm SQL theo" : run.status === "definition" ? "Định nghĩa" : "Trả lời theo"}</span>
+              <span className="whitespace-nowrap text-faint">{isSql ? "Kiểm SQL theo" : run.status === "definition" ? "Định nghĩa" : "Trả lời theo"}</span>
               <button onClick={() => navigate(`/metrics/${run.metric?.id}`)} title="Mở chỉ số này"
-                className="whitespace-nowrap text-[12.5px] text-ink hover:text-accent">{run.metric.name_vi}</button>
-              <span className="shrink-0 whitespace-nowrap rounded border border-line-strong px-1.5 py-px font-mono text-[11.5px] text-faint">{run.metric.id} · v{run.metric.version}</span>
+                className="whitespace-nowrap font-semibold text-ink hover:text-accent">{run.metric.name_vi}</button>
+              <span className="shrink-0 whitespace-nowrap rounded-[5px] border border-line-strong px-[7px] py-0.5 font-mono text-[11px] font-medium text-muted">{run.metric.id} · v{run.metric.version}</span>
               {run.metric.status !== "certified" && <Pill tone="warn">{run.metric.status === "stale" ? "cần chứng nhận lại" : "chỉ số nháp"}</Pill>}
             </>
           ) : (
-            <span className="whitespace-nowrap text-[12.5px] text-muted">
+            <span className="whitespace-nowrap text-faint">
               {isSql ? "Kiểm SQL · không khớp chỉ số nào" : run.interpretation?.kind === "adhoc" ? "Chưa có chỉ số chuẩn" : "Trả lời"}
             </span>
           )}
-          {run.interpretation?.carried && <span className="text-[12px] text-dim">nối tiếp câu trước</span>}
-          {run.interpretation?.detected && <span className="text-[12px] text-dim">tự nhận chỉ số</span>}
-          <span className="whitespace-nowrap text-[12px] text-dim">{timeAgo(run.created_at)}</span>
+          {run.interpretation?.carried && <span className="text-dim">nối tiếp câu trước</span>}
+          {run.interpretation?.detected && <span className="text-dim">tự nhận chỉ số</span>}
+          <span className="whitespace-nowrap text-dim">{timeAgo(run.created_at)}</span>
           {verdict && run.status !== "definition" && <span className="ml-auto"><VerdictStamp verdict={verdict} held={held} /></span>}
         </header>
 
-        <div className="flex flex-col gap-[18px] px-4 pb-[18px] pt-5">
+        <div className="flex flex-col gap-3.5 px-5 pb-[18px] pt-[22px]">
           {!bubble && (isSql
             ? <p className="truncate font-mono text-[12.5px] text-ink-2" title={run.question}>{run.question.replace(/\s+/g, " ")}</p>
             : <h2 className="text-balance text-[15px] font-medium">{run.question}</h2>)}
@@ -181,16 +183,15 @@ export function AnswerCard({ run, onFollowUp, onChange, onAskWith, compact = fal
           {held && <p className="rounded-md bg-held-soft px-3 py-2 text-[13px] text-held">{answer?.text}</p>}
 
           {run.status === "answered" && answer && (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-3.5">
               {answer.headline && (
-                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className={cx("font-mono text-[36px] font-medium leading-[1.15] tracking-[-0.02em]", HEADLINE_TONE[verdict ?? ""] ?? "text-ink")}>
-                    {num}{unit && <span className="text-[18px] text-muted"> {unit}</span>}
-                  </span>
-                  {answer.headline_note && <span className="text-[13px] text-faint">{answer.headline_note}</span>}
+                <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                  <span className={cx("font-mono text-[40px] font-medium leading-[1.1] tracking-[-0.02em]", HEADLINE_TONE[verdict ?? ""] ?? "text-ink")}>{num}</span>
+                  {unit && <span className="text-[16px] text-faint">{unit}</span>}
+                  {answer.headline_note && <span className="text-[13px] text-dim">{answer.headline_note}</span>}
                 </div>
               )}
-              <p className="text-[14px] leading-relaxed text-muted">{answer.text}</p>
+              <p className="text-pretty text-[14px] leading-[1.6] text-ink-2">{answer.text}</p>
             </div>
           )}
 
@@ -216,42 +217,71 @@ export function AnswerCard({ run, onFollowUp, onChange, onAskWith, compact = fal
           )}
           {(run.status === "answered" || run.status === "checked") && !compact && <ResultView run={run} />}
 
-          {(assumptions.length > 0 || (alts.length > 0 && onAskWith)) && (
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-wrap items-center gap-3">
-                {assumptions.length > 0 && (
-                  <button onClick={() => setShowAssume(!showAssume)} aria-expanded={showAssume}
-                    className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-ink-2 hover:text-ink">
-                    <ChevronRight size={12} strokeWidth={2.4} className={cx("transition-transform", showAssume && "rotate-90")} />
-                    Giả định <span className="text-dim">{assumptions.length}</span>
-                  </button>
-                )}
-                {alts.length > 0 && onAskWith && (
-                  <span className="ml-auto flex flex-wrap items-center gap-2 text-[12.5px] text-faint">
-                    “{run.interpretation?.matched_text}” cũng có thể là
-                    {alts.map((a) => (
-                      <button key={a.id} onClick={() => onAskWith(run.question, a.id)}
-                        className="h-[26px] whitespace-nowrap rounded-[5px] border border-edge px-2.5 text-ink hover:bg-line">{a.name_vi}</button>
-                    ))}
-                  </span>
-                )}
-              </div>
-              {showAssume && (
-                <ol className="flex list-decimal flex-col gap-1.5 rounded-md bg-paper py-2.5 pl-8 pr-3.5 text-[13px] leading-normal text-ink-2">
-                  {assumptions.map((a) => <li key={a}>{a}</li>)}
-                </ol>
-              )}
-            </div>
-          )}
         </div>
 
-        {run.attempts.length > 0 && (
-          <section className="border-t border-line bg-panel">
-            <div className="flex flex-wrap items-center gap-2.5 px-4 py-3">
-              <span className="text-[13px] font-medium">Phiếu kiểm</span>
-              <AttemptChips attempts={run.attempts} active={active} onSelect={setActive} />
-              <span className="ml-auto whitespace-nowrap text-[12px] text-dim">kiểm trong {(shown?.verification.elapsed_ms ?? 0).toLocaleString("vi-VN")} ms</span>
+        {(assumptions.length > 0 || (alts.length > 0 && onAskWith)) && (
+          <div className="flex flex-col gap-3 border-t border-line px-[18px] py-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              {assumptions.length > 0 && (
+                <button onClick={() => setShowAssume(!showAssume)} aria-expanded={showAssume}
+                  className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-ink-2 hover:text-ink">
+                  <ChevronRight size={12} strokeWidth={2.4} className={cx("transition-transform", showAssume && "rotate-90")} />
+                  Giả định <span className="text-dim">{assumptions.length}</span>
+                </button>
+              )}
+              {alts.length > 0 && onAskWith && (
+                <span className="ml-auto flex flex-wrap items-center gap-2 text-[12px] text-faint">
+                  “{run.interpretation?.matched_text}” cũng có thể là
+                  {alts.map((a) => (
+                    <button key={a.id} onClick={() => onAskWith(run.question, a.id)}
+                      className="whitespace-nowrap rounded-[7px] border border-line-strong bg-sunk px-2.5 py-[5px] text-[12px] text-ink hover:border-edge hover:bg-hover">{a.name_vi}</button>
+                  ))}
+                </span>
+              )}
             </div>
+            {showAssume && (
+              <ol className="flex list-decimal flex-col gap-1.5 rounded-lg bg-paper py-2.5 pl-8 pr-3.5 text-[13px] leading-normal text-ink-2">
+                {assumptions.map((a) => <li key={a}>{a}</li>)}
+              </ol>
+            )}
+          </div>
+        )}
+
+        <footer className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line px-[18px] py-2.5">
+          {run.attempts.length > 0 && (
+            <button onClick={() => setChecksOpen(!checksOpen)} aria-expanded={checksOpen}
+              className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-ink-2 hover:text-ink">
+              <ChevronRight size={12} strokeWidth={2.4} className={cx("transition-transform", checksOpen && "rotate-90")} />
+              Phiếu kiểm
+            </button>
+          )}
+          {run.attempts.length > 0 && <AttemptChips attempts={run.attempts} active={active} onSelect={(i) => { setActive(i); setChecksOpen(true); }} />}
+          <div className="ml-auto flex items-center gap-1.5 text-[12px] text-faint">
+            {run.review_status === "pending" && <Pill tone="warn">chờ duyệt</Pill>}
+            {run.review_status === "approved" && <Pill tone="good">đã duyệt</Pill>}
+            {run.review_status === "rejected" && <Pill tone="bad">bị từ chối</Pill>}
+            {run.usage && <span className="mr-1 whitespace-nowrap font-mono text-[11.5px] text-dim">{run.usage.llm === "mock" ? "LLM mô phỏng" : run.usage.llm} · {run.usage.latency_ms.toLocaleString("vi-VN")} ms</span>}
+            {onFollowUp && run.input_kind === "question" && run.metric && (
+              <button onClick={() => onFollowUp(run)} title="Hỏi tiếp" aria-label="Hỏi tiếp"
+                className="grid size-[30px] place-items-center rounded-md text-muted hover:bg-hover hover:text-ink"><CornerUpLeft size={15} /></button>
+            )}
+            {run.result && (
+              <button onClick={downloadCsv} title="Tải CSV" aria-label="Tải CSV"
+                className="grid size-[30px] place-items-center rounded-md text-muted hover:bg-hover hover:text-ink"><Download size={15} /></button>
+            )}
+            {run.input_kind === "question" && run.status === "answered" && (
+              run.feedback ? <span className="pl-1">{run.feedback.correct ? "Bạn đánh dấu: đúng" : "Bạn đánh dấu: sai"}</span> : (
+                <>
+                  <button disabled={busy} onClick={() => sendFeedback(true)} className="grid size-[30px] place-items-center rounded-md text-faint hover:bg-hover hover:text-good" title="Số này đúng" aria-label="Số này đúng"><ThumbsUp size={14} /></button>
+                  <button disabled={busy} onClick={() => sendFeedback(false)} className="grid size-[30px] place-items-center rounded-md text-faint hover:bg-hover hover:text-bad" title="Số này sai, gửi duyệt" aria-label="Số này sai"><ThumbsDown size={14} /></button>
+                </>
+              )
+            )}
+          </div>
+        </footer>
+
+        {run.attempts.length > 0 && checksOpen && (
+          <section className="border-t border-line bg-panel">
             <div className="flex flex-wrap items-center gap-1 border-b border-line px-2.5" role="tablist">
               {([["lineage", "Lineage"], ["checks", checksLabel], ["sql", "SQL"], ["trace", "Trace"]] as [Tab, string][]).map(([k, label]) => (
                 <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
@@ -259,6 +289,7 @@ export function AnswerCard({ run, onFollowUp, onChange, onAskWith, compact = fal
                   {label}
                 </button>
               ))}
+              <span className="ml-auto whitespace-nowrap pr-1.5 text-[12px] text-dim">kiểm trong {(shown?.verification.elapsed_ms ?? 0).toLocaleString("vi-VN")} ms</span>
             </div>
             <div className={cx(tab === "sql" ? "p-4" : tab === "lineage" ? "p-4" : "px-4 pb-3 pt-1.5")}>
               {tab === "lineage" && (graph ? <div className="flex flex-col gap-4"><LineageGraph graph={graph} /><GraphLegend /></div>
@@ -279,31 +310,6 @@ export function AnswerCard({ run, onFollowUp, onChange, onAskWith, compact = fal
             </div>
           </section>
         )}
-
-        <footer className="flex flex-wrap items-center gap-1.5 border-t border-line px-2.5 py-2">
-          {onFollowUp && run.input_kind === "question" && run.metric && (
-            <button onClick={() => onFollowUp(run)} title="Hỏi tiếp" aria-label="Hỏi tiếp"
-              className="grid size-[30px] place-items-center rounded-[5px] text-muted hover:bg-hover hover:text-ink"><CornerUpLeft size={15} /></button>
-          )}
-          {run.result && (
-            <button onClick={downloadCsv} title="Tải CSV" aria-label="Tải CSV"
-              className="grid size-[30px] place-items-center rounded-[5px] text-muted hover:bg-hover hover:text-ink"><Download size={15} /></button>
-          )}
-          <div className="ml-auto flex items-center gap-2 text-[12px] text-faint">
-            {run.review_status === "pending" && <Pill tone="warn">chờ duyệt</Pill>}
-            {run.review_status === "approved" && <Pill tone="good">đã duyệt</Pill>}
-            {run.review_status === "rejected" && <Pill tone="bad">bị từ chối</Pill>}
-            {run.usage && <span className="whitespace-nowrap font-mono text-[11.5px] text-dim">{run.usage.llm === "mock" ? "LLM mô phỏng" : run.usage.llm} · {run.usage.latency_ms.toLocaleString("vi-VN")} ms</span>}
-            {run.input_kind === "question" && run.status === "answered" && (
-              run.feedback ? <span>{run.feedback.correct ? "Bạn đánh dấu: đúng" : "Bạn đánh dấu: sai"}</span> : (
-                <span className="flex items-center">
-                  <button disabled={busy} onClick={() => sendFeedback(true)} className="grid size-[30px] place-items-center rounded-[5px] text-faint hover:bg-hover hover:text-good" title="Số này đúng" aria-label="Số này đúng"><ThumbsUp size={14} /></button>
-                  <button disabled={busy} onClick={() => sendFeedback(false)} className="grid size-[30px] place-items-center rounded-[5px] text-faint hover:bg-hover hover:text-bad" title="Số này sai, gửi duyệt" aria-label="Số này sai"><ThumbsDown size={14} /></button>
-                </span>
-              )
-            )}
-          </div>
-        </footer>
       </article>
     </div>
   );

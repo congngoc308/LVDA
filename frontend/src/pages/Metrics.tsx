@@ -1,13 +1,14 @@
 ﻿import { BadgeCheck, Download, PencilLine, Plus, Search, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildAnswerGraph, GraphLegend, LineageGraph, type Graph } from "../components/LineageGraph";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, ApiError, apiText } from "../api";
 import { SqlView } from "../components/Sql";
 import { Button, cx, Drawer, ErrorNote, fmtDate, Modal, shortCol } from "../components/ui";
 import { describeFilter } from "../format";
 import { useSession } from "../session";
 import type { Fingerprint } from "../types";
+import { MetricForm } from "./MetricForm";
 
 interface Metric {
   id: string; name_vi: string; description: string; status: string; version: number; format: string; unit: string;
@@ -19,26 +20,6 @@ interface MetricDetail extends Metric {
   fingerprint: Fingerprint | null;
   versions: { version: number; created_at: string; created_by: string; yaml: string }[];
 }
-
-const NEW_TEMPLATE = `id: new_metric
-name_vi: Tên chỉ số
-description: Mô tả ngắn, một câu.
-unit: BRL
-format: currency   # currency | percent | integer | days | score | number
-synonyms: [từ khóa 1, từ khóa 2]
-owner: engineer@lvda.dev
-grain: order
-time_column: mart.fct_orders.purchased_at
-canonical_sql: |
-  SELECT SUM(i.price) AS new_metric
-  FROM mart.fct_order_items AS i
-  JOIN mart.fct_orders AS o ON o.order_id = i.order_id
-  WHERE o.order_status = 'delivered'
-required_filters:
-  - {column: mart.fct_orders.order_status, op: "=", value: delivered}
-assumptions:
-  - Chỉ tính đơn đã giao
-`;
 
 const METRICFLOW_SAMPLE = `semantic_models:
   - name: orders
@@ -201,8 +182,14 @@ export default function MetricsPage() {
   const [list, setList] = useState<Metric[]>([]);
   const [detail, setDetail] = useState<MetricDetail | null>(null);
   const [editor, setEditor] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const eng = db?.role === "engineer";
+  // /metrics?new=1 (từ trình sửa card của tab Đánh giá): mở sẵn màn hình thêm chỉ số
+  const [params, setParams] = useSearchParams();
+  useEffect(() => {
+    if (eng && params.has("new")) { setCreating(true); setParams({}, { replace: true }); }
+  }, [eng, params, setParams]);
 
   const load = useCallback(() => { if (db) api<Metric[]>(`/db/${db.id}/metrics`).then(setList).catch((e) => setError(e.message)); }, [db]);
   useEffect(() => { load(); }, [load]);
@@ -247,11 +234,10 @@ export default function MetricsPage() {
     <div className="scroll-thin h-full overflow-y-auto">
       <div className="flex flex-col gap-4 px-7 py-6">
         <div className="flex flex-wrap items-center gap-4">
-          <p className="flex-[1_1_360px] text-[13px] leading-relaxed text-muted">Định nghĩa chuẩn mà bộ kiểm định dùng để so. Chỉ số nháp vẫn trả lời được nhưng luôn ở mức Vàng.</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="ml-auto flex flex-wrap gap-2">
             {eng && <Button onClick={() => setImporting(true)}><Download size={13} /> Nhập YAML / MetricFlow</Button>}
             <Button onClick={exportYaml}><Upload size={13} /> Xuất YAML</Button>
-            {eng && <Button variant="primary" onClick={() => setEditor(NEW_TEMPLATE)}><Plus size={13} strokeWidth={2.4} /> Thêm chỉ số</Button>}
+            {eng && <Button variant="primary" onClick={() => setCreating(true)}><Plus size={13} strokeWidth={2.4} /> Thêm chỉ số</Button>}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -338,6 +324,10 @@ export default function MetricsPage() {
         )}
       </Drawer>
 
+      <MetricForm open={creating} onClose={() => setCreating(false)} existing={list.map((m) => m.id)}
+        timeColumns={[...new Set(list.map((m) => m.time_column).filter(Boolean))]}
+        onYaml={(y) => { setCreating(false); setEditor(y); }}
+        onSaved={(id) => { setCreating(false); load(); nav(`/metrics/${id}`); }} />
       <ImportModal open={importing} onClose={() => setImporting(false)} onDone={load} />
       <YamlEditor open={editor !== null} initial={editor ?? ""} onClose={() => setEditor(null)}
         onSaved={(id) => { setEditor(null); load(); nav(`/metrics/${id}`); api<MetricDetail>(`/db/${db!.id}/metrics/${id}`).then(setDetail); }} />

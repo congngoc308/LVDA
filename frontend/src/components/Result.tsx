@@ -71,22 +71,22 @@ export function ResultView({ run, limit = 12 }: { run: Run; limit?: number }) {
         <table className="w-full border-collapse font-mono text-[13px]">
           <thead className="text-left font-sans text-[12px] text-dim">
             <tr className="border-b border-line">
-              {cols.map((c, j) => <th key={c.key} className={cx("pb-2 pr-4 font-normal", c.kind === "measure" && "text-right", j === 0 && cols.length <= 2 && "w-full")}>{c.label}</th>)}
-              {hasDim && <th className="hidden pb-2 sm:table-cell" aria-hidden />}
+              {cols.map((c, j) => <th key={c.key} className={cx("whitespace-nowrap py-2.5 pr-4 font-normal", c.kind === "measure" && "text-right", j === 0 && cols.length <= 2 && "w-full")}>{c.label}</th>)}
+              {hasDim && <th className="hidden py-2.5 sm:table-cell" aria-hidden />}
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={i} className="border-b border-line-soft">
+              <tr key={i} className="border-b border-line-soft last:border-0">
                 {cols.map((c) => (
-                  <td key={c.key} className={cx("whitespace-nowrap py-[9px] pr-4", c.kind === "measure" ? "num text-right text-ink-2" : "text-ink")}>
+                  <td key={c.key} className={cx("whitespace-nowrap py-3 pr-4", c.kind === "measure" ? "num text-right text-ink" : "text-ink")}>
                     {c.kind === "measure" ? formatValue(r[cols.indexOf(c)], c.format, c.unit) : formatDim(r[cols.indexOf(c)])}
                   </td>
                 ))}
                 {hasDim && (
-                  <td className="hidden w-[min(220px,25%)] min-w-20 py-[9px] sm:table-cell" aria-hidden>
+                  <td className="hidden w-[160px] min-w-20 py-3 sm:table-cell" aria-hidden>
                     <span className="flex h-1 overflow-hidden rounded-sm bg-line">
-                      <span className="bg-accent" style={{ width: `${(Math.abs(nums[i]) / max) * 100}%` }} />
+                      <span className="rounded-sm bg-accent" style={{ width: `${(Math.abs(nums[i]) / max) * 100}%` }} />
                     </span>
                   </td>
                 )}

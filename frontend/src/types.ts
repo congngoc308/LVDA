@@ -68,4 +68,5 @@ export interface Run {
 export interface RunLite {
   id: string; question: string; input_kind: string; status: string; final_verdict: Verdict | null;
   metric_id: string | null; review_status: string; created_at: string; headline: string | null; user_name?: string;
+  feedback?: { correct: boolean } | null; recon_status?: string | null;
 }

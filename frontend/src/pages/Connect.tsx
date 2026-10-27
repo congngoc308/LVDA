@@ -256,7 +256,6 @@ export default function ConnectPage() {
                       {fieldError("password") && <span role="alert" className="text-[12px] text-bad">{fieldError("password")}</span>}
                     </div>
                   </div>
-                  <p className="text-[12px] text-muted">Mật khẩu được mã hóa khi lưu và không bao giờ hiện lại.</p>
                 </div>
                 <div className="flex justify-end"><Button variant="primary" disabled={!ready} onClick={() => runCheck(f)}>Tiếp: kiểm tra kết nối</Button></div>
               </>
@@ -264,10 +263,7 @@ export default function ConnectPage() {
 
             {step === 2 && (
               <>
-                <div>
-                  <h2 className="text-[17px] font-semibold">Kiểm tra</h2>
-                  <p className="text-[13px] text-muted">LVDA thử từng bước theo thứ tự, bước hỏng thì dừng để bạn biết sửa ở đâu.</p>
-                </div>
+                <h2 className="text-[17px] font-semibold">Kiểm tra</h2>
                 <ul className="flex flex-col rounded-lg border border-line bg-surface" aria-live="polite">
                   {(result?.checks.length ? result.checks : (["Mạng", "Xác thực", "Role chỉ đọc", "Đọc schema"].map((label, i) => ({ id: String(i), label, status: "skip", detail: null })))).map((c) => (
                     <li key={c.id} className="flex items-start gap-3 border-t border-line px-4 py-3 first:border-t-0">

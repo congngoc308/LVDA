@@ -45,7 +45,7 @@ export default function App() {
       <Route path="/connect" element={<Navigate to="/sources/connect" replace />} />
       {/* đường dẫn cũ: giữ để link đã lưu vẫn mở được */}
       <Route path="/reviews" element={<Navigate to="/eval?queue=1" replace />} />
-      <Route path="/members" element={<Navigate to="/share" replace />} />
+      <Route path="/members" element={<Navigate to="/share?tab=members" replace />} />
       <Route path="/audit" element={<Navigate to="/share?tab=audit" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

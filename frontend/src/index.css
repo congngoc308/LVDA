@@ -161,6 +161,9 @@
 .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
 .scroll-thin { scrollbar-width: thin; scrollbar-color: var(--color-line-strong) transparent; }
+/* thanh mục chính cuộn ngang trên màn hẹp mà không hiện thanh cuộn */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
 
 /* công tắc nhỏ 26×15 (LLM mô phỏng, bật/tắt luật); trong layer components để màu nền bật (utility) đè được */
 @layer components {
@@ -168,6 +171,11 @@
   .lv-switch::after { content: ""; width: 11px; height: 11px; border-radius: 50%; background: var(--switch-knob); transition: transform .15s; }
   .lv-switch[data-on="true"]::after { transform: translateX(11px); }
 }
+
+/* ô kính nổi lên xuống trong panel màu của màn đăng nhập; đứng yên khi người dùng giảm chuyển động */
+.lv-bob { animation: lv-bob 3s ease-in-out infinite alternate; }
+@keyframes lv-bob { from { transform: translateY(-8px); } to { transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .lv-bob { animation: none; } }
 
 /* canvas lineage (React Flow, cả hai chế độ) dùng cùng bộ màu */
 .react-flow.dark, .react-flow.light {

@@ -21,12 +21,12 @@ const SEV_ON: Record<string, string> = { high: "bg-[oklch(0.52_0.18_25)] text-wh
 const nf = (n: number) => n.toLocaleString("vi-VN");
 
 /** Một nhóm cài đặt: cột trái là tên + giải thích, cột phải là nội dung. */
-function Group({ title, note, children }: { title: string; note: ReactNode; children: ReactNode }) {
+function Group({ title, note, children }: { title: string; note?: ReactNode; children: ReactNode }) {
   return (
     <section className="flex flex-wrap gap-x-10 gap-y-4 border-t border-line py-6">
       <div className="flex flex-[0_0_200px] flex-col gap-1.5">
         <h4 className="text-[14px] font-medium">{title}</h4>
-        <p className="text-[12.5px] leading-relaxed text-faint">{note}</p>
+        {note && <p className="text-[12.5px] leading-relaxed text-faint">{note}</p>}
       </div>
       <div className="flex min-w-0 flex-[1_1_460px] flex-col gap-2.5">{children}</div>
     </section>
@@ -80,7 +80,7 @@ export default function SettingsPage() {
     <div className="flex h-full flex-col">
       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto px-7 pb-6">
         <p className="py-5 text-[13px] text-muted">
-          Áp cho riêng database {db?.name.split(" · ")[0]}. Mọi thay đổi luật được ghi vào nhật ký.
+          Áp cho riêng database {db?.name.split(" · ")[0]}.
           {!canEdit && " Chỉ engineer được gán trực tiếp mới đổi được."}
           {saved && <span className="ml-2 text-good">Đã lưu.</span>}
         </p>
@@ -147,7 +147,7 @@ export default function SettingsPage() {
           </Group>
         )}
 
-        <Group title="Truy vấn mẫu đã duyệt" note="Dùng làm ví dụ cho LLM khi gặp câu hỏi tương tự.">
+        <Group title="Truy vấn mẫu đã duyệt">
           {vq.length === 0 ? (
             <div className="rounded-lg border border-dashed border-line-strong p-5 text-center text-[13px] text-faint">Chưa có. Duyệt một câu trả lời ở trang Đánh giá để tạo truy vấn mẫu.</div>
           ) : (
