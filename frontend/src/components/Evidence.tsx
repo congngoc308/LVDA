@@ -117,7 +117,7 @@ export function AttemptChips({ attempts, active, onSelect }: { attempts: Attempt
             {i > 0 && <ArrowRight size={14} className="text-dim" aria-hidden />}
             <button onClick={() => onSelect(i)} aria-pressed={active === i}
               className={cx("flex items-center gap-1.5 whitespace-nowrap rounded-[5px] border px-2 py-[3px] text-[12px] transition-colors",
-                active === i ? "border-[#44485f] text-ink" : "border-raised text-faint hover:text-ink-2")}>
+                active === i ? "border-edge-2 text-ink" : "border-raised text-faint hover:text-ink-2")}>
               <span className={cx("size-1.5 rounded-full", DOT[a.verdict] ?? "bg-line-strong")} />
               Lần {a.no} · {SOURCE_LABEL[a.source] ?? a.source} · {meta.label}
               {rules.slice(0, 3).map((f) => <span key={f.rule} className={cx("font-mono", f.severity === "high" ? "text-bad" : f.severity === "medium" ? "text-warn" : "text-muted")}>{f.rule}</span>)}

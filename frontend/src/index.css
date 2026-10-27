@@ -47,11 +47,103 @@
   --color-bad-solid: oklch(0.48 0.16 25);
   --color-held: oklch(0.78 0.12 295);
   --color-held-soft: oklch(0.28 0.06 295);
+
+  /* sắc phụ trước đây viết cứng trong component; gom về token để bản sáng đổi được */
+  --color-hover-soft: #181a28;
+  --color-rule: #191b27;
+  --color-panel: #0f101a;
+  --color-selected: #1a1c2b;
+  --color-edge-2: #44485f;
+  --color-edge-focus: #4a4f6e;
+  --color-edge-hover: #3a4466;
+  --color-legend: #61668a;
+  --color-neutral-solid: #44485f;
+  --color-on-accent-2: #0e2d66;
+  --color-teal: oklch(0.82 0.105 165);
+  --color-accent-mid: oklch(0.66 0.1 255);
+  --color-accent-line: oklch(0.45 0.1 255);
+  --color-accent-ring: oklch(0.6 0.15 255 / 0.35);
+  --color-info-soft: oklch(0.26 0.05 255 / 0.5);
+}
+
+/* màu chỉ dùng trong CSS (không sinh utility) */
+:root {
+  --sql-kw: oklch(0.78 0.13 300);
+  --sql-hl: oklch(0.38 0.08 80);
+  --diff-add: oklch(0.28 0.06 255);
+  --diff-del: oklch(0.27 0.06 25);
+  --diff-del-line: oklch(0.72 0.17 22 / 0.5);
+  --selection: oklch(0.42 0.1 255);
+  --switch-knob: var(--color-ink);
+}
+
+/* Bản sáng: cùng một màu nhấn xanh dương, đậm hơn cho đủ tương phản trên nền trắng.
+   Chữ trên nền paper: ink 17:1, muted 7,5:1, faint 5,8:1, dim 5:1; accent 5,7:1, warn 5:1, bad 5,6:1 (WCAG AA). */
+:root[data-theme="light"] {
+  --color-paper: #f5f6fa;
+  --color-sidebar: #eef0f5;
+  --color-surface: #ffffff;
+  --color-sunk: #eff1f6;
+  --color-hover: #e6e9f1;
+  --color-raised: #dadee9;
+  --color-line-soft: #eceef4;
+  --color-line: #e0e3ec;
+  --color-line-strong: #d0d4e0;
+  --color-edge: #bcc2d3;
+  --color-ink: #11131d;
+  --color-ink-2: #2a2d3d;
+  --color-muted: #4a4f66;
+  --color-faint: #5a5f78;
+  --color-dim: #646984;
+
+  --color-navy: #2257d6;
+  --color-navy-2: #1a46b0;
+  --color-on-accent: #ffffff;
+  --color-accent: #2257d6;
+  --color-accent-2: #1a46b0;
+  --color-accent-soft: #e2eaff;
+  --color-cyan: oklch(0.5 0.09 210);
+  --color-pink: oklch(0.53 0.19 350);
+
+  --color-good: #2257d6;
+  --color-good-soft: #e2eaff;
+  --color-warn: oklch(0.53 0.12 65);
+  --color-warn-soft: oklch(0.95 0.05 85);
+  --color-bad: oklch(0.52 0.19 25);
+  --color-bad-soft: oklch(0.95 0.03 22);
+  --color-bad-solid: oklch(0.5 0.19 25);
+  --color-held: oklch(0.5 0.16 295);
+  --color-held-soft: oklch(0.95 0.03 295);
+
+  --color-hover-soft: #eef0f6;
+  --color-rule: #e6e8ef;
+  --color-panel: #fafbfd;
+  --color-selected: #eef3ff;
+  --color-edge-2: #b4b9ca;
+  --color-edge-focus: #9aa1b8;
+  --color-edge-hover: #b7c3e0;
+  --color-legend: #8d93ab;
+  --color-neutral-solid: #5a5f78;
+  --color-on-accent-2: #d6e2ff;
+  --color-teal: oklch(0.55 0.11 170);
+  --color-accent-mid: oklch(0.62 0.12 255);
+  --color-accent-line: oklch(0.78 0.08 255);
+  --color-accent-ring: oklch(0.55 0.18 255 / 0.25);
+  --color-info-soft: #eef3ff;
+
+  --sql-kw: oklch(0.47 0.17 300);
+  --sql-hl: oklch(0.92 0.08 85);
+  --diff-add: #e2eaff;
+  --diff-del: oklch(0.95 0.03 22);
+  --diff-del-line: oklch(0.52 0.19 25 / 0.5);
+  --selection: oklch(0.86 0.06 255);
+  --switch-knob: #ffffff;
 }
 
 @layer base {
   html, body, #root { height: 100%; }
   html { color-scheme: dark; }
+  html[data-theme="light"] { color-scheme: light; }
   body {
     background: var(--color-paper);
     color: var(--color-ink);
@@ -60,7 +152,7 @@
     -webkit-font-smoothing: antialiased;
   }
   :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; border-radius: 4px; }
-  ::selection { background: oklch(0.42 0.1 255); }
+  ::selection { background: var(--selection); }
   ::placeholder { color: var(--color-dim); }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-thumb { background: var(--color-line-strong); border-radius: 8px; }
@@ -73,12 +165,12 @@
 /* công tắc nhỏ 26×15 (LLM mô phỏng, bật/tắt luật); trong layer components để màu nền bật (utility) đè được */
 @layer components {
   .lv-switch { position: relative; display: inline-flex; width: 26px; height: 15px; flex-shrink: 0; border-radius: 8px; padding: 2px; background: var(--color-edge); transition: background .15s; }
-  .lv-switch::after { content: ""; width: 11px; height: 11px; border-radius: 50%; background: var(--color-ink); transition: transform .15s; }
+  .lv-switch::after { content: ""; width: 11px; height: 11px; border-radius: 50%; background: var(--switch-knob); transition: transform .15s; }
   .lv-switch[data-on="true"]::after { transform: translateX(11px); }
 }
 
-/* canvas lineage (React Flow, chế độ tối) dùng cùng bộ màu */
-.react-flow.dark {
+/* canvas lineage (React Flow, cả hai chế độ) dùng cùng bộ màu */
+.react-flow.dark, .react-flow.light {
   --xy-background-color: var(--color-paper);
   --xy-controls-button-background-color: var(--color-surface);
   --xy-controls-button-background-color-hover: var(--color-sunk);
@@ -88,13 +180,13 @@
 }
 
 /* tô màu SQL */
-.sql .kw { color: oklch(0.78 0.13 300); font-weight: 500; }
+.sql .kw { color: var(--sql-kw); font-weight: 500; }
 .sql .fn { color: var(--color-accent); }
 .sql .str { color: var(--color-cyan); }
 .sql .numlit { color: var(--color-warn); }
 .sql .cmt { color: var(--color-dim); font-style: italic; }
-.sql .hl { background: oklch(0.38 0.08 80); border-radius: 2px; }
-.diff-add { background: oklch(0.28 0.06 255); }
-.diff-del { background: oklch(0.27 0.06 25); text-decoration: line-through; text-decoration-color: oklch(0.72 0.17 22 / 0.5); }
+.sql .hl { background: var(--sql-hl); border-radius: 2px; }
+.diff-add { background: var(--diff-add); }
+.diff-del { background: var(--diff-del); text-decoration: line-through; text-decoration-color: var(--diff-del-line); }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

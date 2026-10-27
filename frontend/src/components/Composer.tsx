@@ -53,7 +53,7 @@ export const Composer = forwardRef<ComposerHandle, {
   };
 
   return (
-    <div className="rounded-[10px] border border-edge bg-sunk focus-within:border-[#4a4f6e]">
+    <div className="rounded-[10px] border border-edge bg-sunk focus-within:border-edge-focus">
       {(context || interp || sql) && (
         <div className="flex flex-wrap items-center gap-1.5 border-b border-line px-3.5 py-2 text-[12.5px]">
           {context && !sql && (

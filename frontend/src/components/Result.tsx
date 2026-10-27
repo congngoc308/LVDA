@@ -31,7 +31,7 @@ function MonthBars({ rows, measure }: { rows: unknown[][]; measure: ResultColumn
             <g key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
               <rect x={pad.l + i * bw} y={pad.t} width={bw} height={H - pad.t - pad.b} fill="transparent" />
               <path d={`M${x},${H - pad.b} V${top + Math.min(4, h)} q0,-4 4,-4 h${w - 8} q4,0 4,4 V${H - pad.b} Z`}
-                fill={hover === i ? "oklch(0.84 0.1 235)" : "var(--color-accent)"} opacity={hover === null || hover === i ? 1 : 0.55} />
+                fill={hover === i ? "var(--color-accent-2)" : "var(--color-accent)"} opacity={hover === null || hover === i ? 1 : 0.55} />
               {(rows.length <= 12 || i % Math.ceil(rows.length / 12) === 0) && (
                 <text x={pad.l + i * bw + bw / 2} y={H - 6} textAnchor="middle" fontSize="10" fill="var(--color-faint)" fontFamily="IBM Plex Mono">{formatDim(r[0])}</text>
               )}

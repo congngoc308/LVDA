@@ -279,7 +279,7 @@ export default function MetricsPage() {
               const filters = m.required_filters.map(describeFilter).join("; ");
               return (
                 <button key={m.id} onClick={() => nav(`/metrics/${m.id}`)}
-                  className={cx(grid, "w-full items-center border-b border-line-soft px-4 py-[11px] text-left last:border-b-0 hover:bg-[#191b2a]", metricId === m.id && "bg-hover")}>
+                  className={cx(grid, "w-full items-center border-b border-line-soft px-4 py-[11px] text-left last:border-b-0 hover:bg-hover-soft", metricId === m.id && "bg-hover")}>
                   <span className="flex min-w-0 flex-col gap-0.5">
                     <span className="text-[13px] text-ink">{m.name_vi}</span>
                     <span className="font-mono text-[11.5px] text-faint">{m.id} · v{m.version}</span>

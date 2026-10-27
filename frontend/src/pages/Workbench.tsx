@@ -15,7 +15,7 @@ const QUESTIONS: [string, string][] = [
   ["Doanh thu tháng 3/2018 là bao nhiêu?", "var(--color-accent)"],
   ["Doanh thu theo loại thanh toán năm 2017", "var(--color-cyan)"],
   ["Số khách hàng theo bang quý 2/2018", "var(--color-warn)"],
-  ["Tỉ lệ giao trễ theo tháng năm 2018", "oklch(0.74 0.17 25)"],
+  ["Tỉ lệ giao trễ theo tháng năm 2018", "var(--color-bad)"],
   ["Điểm đánh giá trung bình", "var(--color-warn)"],
   ["Doanh thu gộp lấy từ đâu?", "var(--color-pink)"],
 ];
@@ -185,7 +185,7 @@ export default function Workbench() {
             <span className="px-3 pb-1.5 pt-0.5 text-[11px] text-dim">{g.label}</span>
             {g.items.map((h) => (
               <button key={h.id} onClick={() => { setHistoryOpen(false); nav(`/runs/${h.id}`); }}
-                className={cx("flex flex-col gap-[3px] rounded-md px-3 py-2 text-left hover:bg-[#181a28]", runId === h.id && "bg-hover")}>
+                className={cx("flex flex-col gap-[3px] rounded-md px-3 py-2 text-left hover:bg-hover-soft", runId === h.id && "bg-hover")}>
                 <span className={cx("line-clamp-2 text-pretty text-[13px] leading-[1.4] text-ink-2", h.input_kind === "sql" && "font-mono text-[12px]")}>{h.question}</span>
                 <span className="flex items-center gap-2 text-[11.5px]">
                   <span className={cx("truncate font-mono", valueTone(h))}>{h.headline ?? (h.status === "held" ? "giữ lại" : "—")}</span>
@@ -252,10 +252,10 @@ export default function Workbench() {
                   </div>
                   {QUESTIONS.map(([q, c]) => (
                     <button key={q} onClick={() => composer.current?.fill(q)}
-                      className="group flex items-center gap-3 border-b border-[#191b27] py-[11px] text-left text-[14px] text-ink-2 hover:text-white">
+                      className="group flex items-center gap-3 border-b border-rule py-[11px] text-left text-[14px] text-ink-2 hover:text-ink">
                       <span className="size-2 shrink-0 rounded-[2px]" style={{ background: c }} aria-hidden />
                       <span className="flex-1">{q}</span>
-                      <span className="text-[13px] text-[#44485f] group-hover:text-accent" aria-hidden>→</span>
+                      <span className="text-[13px] text-edge-2 group-hover:text-accent" aria-hidden>→</span>
                     </button>
                   ))}
                 </section>
@@ -266,7 +266,7 @@ export default function Workbench() {
                   </div>
                   {SQLS.map((s) => (
                     <button key={s.label} onClick={() => composer.current?.fill(s.sql)}
-                      className="flex w-full min-w-0 flex-col gap-1.5 overflow-hidden border-b border-[#191b27] py-3 text-left hover:bg-surface">
+                      className="flex w-full min-w-0 flex-col gap-1.5 overflow-hidden border-b border-rule py-3 text-left hover:bg-surface">
                       <span className="flex w-full items-center gap-2">
                         <span className="flex-1 text-[14px] text-ink">{s.label}</span>
                         <span className="whitespace-nowrap rounded bg-bad-solid px-[7px] py-0.5 font-mono text-[11px] font-medium text-[#ffe3dc]">{s.tag}</span>

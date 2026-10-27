@@ -17,7 +17,7 @@ interface SettingsData {
 interface VQ { id: number; question: string; sql: string; metric_id: string | null; active: boolean; inactive_reason: string | null; created_at: string; approved_by_name: string }
 
 const SEV = [["high", "Cao"], ["medium", "Trung bình"], ["low", "Thấp"]] as const;
-const SEV_ON: Record<string, string> = { high: "bg-[oklch(0.52_0.18_25)] text-white", medium: "bg-[oklch(0.58_0.13_70)] text-white", low: "bg-[#44485f] text-white" };
+const SEV_ON: Record<string, string> = { high: "bg-[oklch(0.52_0.18_25)] text-white", medium: "bg-[oklch(0.58_0.13_70)] text-white", low: "bg-neutral-solid text-white" };
 const nf = (n: number) => n.toLocaleString("vi-VN");
 
 /** Một nhóm cài đặt: cột trái là tên + giải thích, cột phải là nội dung. */
@@ -116,7 +116,7 @@ export default function SettingsPage() {
                 const on = data.llm.model === m.id;
                 return (
                   <button key={m.id} role="radio" aria-checked={on} disabled={!canEdit} onClick={() => saveModel(m.id)}
-                    className={cx("flex flex-col gap-1 rounded-lg border p-3 text-left disabled:cursor-not-allowed", on ? "border-accent bg-[#1a1c2b]" : "border-line-strong enabled:hover:bg-hover")}>
+                    className={cx("flex flex-col gap-1 rounded-lg border p-3 text-left disabled:cursor-not-allowed", on ? "border-accent bg-selected" : "border-line-strong enabled:hover:bg-hover")}>
                     <span className="flex w-full items-center gap-2">
                       <span className="flex-1 font-mono text-[13px] text-ink">{m.id}</span>
                       <span className={cx("grid size-3.5 place-items-center rounded-full border", on ? "border-accent" : "border-line-strong")}>
@@ -154,7 +154,7 @@ export default function SettingsPage() {
             <ul className="flex flex-col">
               {vq.map((v) => (
                 <li key={v.id} className="border-b border-line-soft last:border-b-0">
-                  <button onClick={() => setOpen(open === v.id ? null : v.id)} className="flex w-full items-center gap-3 py-2.5 text-left hover:text-white">
+                  <button onClick={() => setOpen(open === v.id ? null : v.id)} className="flex w-full items-center gap-3 py-2.5 text-left hover:text-ink">
                     <span className="flex-1 text-[13px] text-ink-2">{v.question}</span>
                     {v.active ? <Pill tone="good">đang dùng</Pill> : <Pill tone="warn">tạm ẩn</Pill>}
                     <span className="whitespace-nowrap text-[12px] text-faint">{v.approved_by_name} · {fmtDate(v.created_at)}</span>
@@ -172,7 +172,7 @@ export default function SettingsPage() {
         </Group>
       </div>
       {dirty && canEdit && (
-        <div className="flex shrink-0 items-center gap-2 border-t border-line-strong bg-[#1a1c2b] px-7 py-3">
+        <div className="flex shrink-0 items-center gap-2 border-t border-line-strong bg-selected px-7 py-3">
           <span className="flex-1 text-[13px] text-ink-2">Có thay đổi chưa lưu</span>
           <Button onClick={() => data && setRules(data.rules)}>Hủy</Button>
           <Button variant="primary" onClick={save}>Lưu thay đổi</Button>

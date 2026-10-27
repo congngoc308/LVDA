@@ -1,15 +1,40 @@
-﻿import { Database, FlaskConical, LogOut, MessageSquareText, Network, Users } from "lucide-react";
+﻿import { Database, FlaskConical, LogOut, MessageSquareText, Moon, Network, Sun, Users } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { api } from "../api";
 import { useSession } from "../session";
+import { useTheme } from "../theme";
 import { DatabaseSwitcher } from "./DatabaseSwitcher";
 import { cx } from "./ui";
+
+/** Dấu logo: vân tay dạng vòm, đầu đường vân là nút dữ liệu, kèm huy hiệu tích xanh (lineage đã kiểm). */
+export function LogoMark({ size = 30 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 72 72" width={size} height={size} className="shrink-0" aria-hidden>
+      <rect width="72" height="72" rx="16" fill="#1E3A5F" />
+      <g transform="translate(34 34) scale(0.5)">
+        <g fill="none" stroke="#FFFFFF" strokeWidth="5.5" strokeLinecap="round">
+          <path d="M-10 16 V0 A10 10 0 0 1 10 0 V8" />
+          <path d="M-20 30 V0 A20 20 0 0 1 20 0 V18" />
+          <path d="M-30 40 V0 A30 30 0 0 1 30 0 V4" />
+          <path d="M-40 32 V0 A40 40 0 0 1 38 -12.5" />
+          <path d="M-50 22 V0 A50 50 0 0 1 36 -34.7" />
+        </g>
+        <g fill="#FFFFFF">
+          <circle cx="-50" cy="22" r="6.5" /><circle cx="-20" cy="30" r="6.5" /><circle cx="36" cy="-34.7" r="6.5" /><circle cx="30" cy="4" r="6.5" />
+        </g>
+        <circle cx="40" cy="42" r="24" fill="#1E3A5F" />
+        <circle cx="40" cy="42" r="19" fill="#22C55E" />
+        <path d="M31 42 l6 6 l12 -13" fill="none" stroke="#FFFFFF" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+    </svg>
+  );
+}
 
 export function Logo({ light = false }: { light?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="grid size-[26px] place-items-center rounded-md bg-accent font-mono text-[12px] font-medium text-on-accent" aria-hidden>L</div>
+      <LogoMark />
       <div className="flex flex-col leading-tight">
         <span className="text-[14px] font-semibold tracking-[0.02em]">LVDA</span>
         <span className={cx("text-[11.5px]", light ? "text-ink-2" : "text-faint")}>Hỏi số, có phiếu kiểm</span>
@@ -17,6 +42,16 @@ export function Logo({ light = false }: { light?: boolean }) {
     </div>
   );
 }
+/** Nút đổi chế độ sáng/tối; lựa chọn được nhớ trên trình duyệt này. */
+export function ThemeToggle() {
+  const [theme, setTheme] = useTheme();
+  const label = theme === "dark" ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối";
+  return (
+    <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="grid size-7 place-items-center rounded-md text-faint hover:bg-hover hover:text-ink"
+      aria-label={label} title={label}>{theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}</button>
+  );
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const { user, db, canConnect, logout } = useSession();
   const [pending, setPending] = useState<number | null>(null);
@@ -109,6 +144,7 @@ export function Shell({ children }: { children: ReactNode }) {
               <span className="truncate text-[13px] font-medium">{name}</span>
               <span className="truncate text-[11.5px] text-faint">{role ? `${role.replace(/\)$/, "")} · ` : ""}{user?.email}</span>
             </div>
+            <ThemeToggle />
             <button onClick={logout} className="grid size-7 place-items-center rounded-md text-faint hover:bg-hover hover:text-ink" aria-label="Đăng xuất" title="Đăng xuất"><LogOut size={15} /></button>
           </div>
         </div>

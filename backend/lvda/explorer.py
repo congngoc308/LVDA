@@ -270,8 +270,6 @@ def search(database_id: int, q: str = "", domain: str | None = None, layer: int 
     for t, cols in idx.cat.columns.items():
         if domain and idx.domain[t] != domain:
             continue
-        if layer is not None and idx.layer[t] != layer:
-            continue
         b = _brief(idx, desc, u, t)
         if "pii" in tags and not b["pii"] or "draft" in tags and not b["drafts"] or "deprecated" in tags and not b["deprecated"]:
             continue
@@ -292,8 +290,12 @@ def search(database_id: int, q: str = "", domain: str | None = None, layer: int 
                               "domain_label": b["domain_label"], "pii": full in idx.cat.pii, "deprecated": b["deprecated"],
                               "description": cd["description"] if cd else None, "uses": b["uses"],
                               "score": round(cs + boost * 0.5, 2)})
+    # số kết quả theo lớp tính trước khi lọc lớp, để các tab lớp hiện đủ số
+    by_layer = Counter(i["layer"] for i in items)
+    if layer is not None:
+        items = [i for i in items if i["layer"] == layer]
     items.sort(key=lambda i: (-i["score"], i["name"], i.get("column", "")))
-    return {"total": len(items), "items": items[offset:offset + limit]}
+    return {"total": len(items), "by_layer": {str(k): v for k, v in sorted(by_layer.items())}, "items": items[offset:offset + limit]}
 
 
 # ---------------------------------------------------------------- lineage vùng lân cận

@@ -1,6 +1,6 @@
 ﻿import { useState, type FormEvent } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
-import { Logo } from "../components/Shell";
+import { Logo, ThemeToggle } from "../components/Shell";
 import { Button, ErrorNote, VerdictStamp } from "../components/ui";
 import { useSession } from "../session";
 
@@ -62,25 +62,26 @@ export default function LoginPage() {
   if (!loading && user) return <Navigate to={params.get("next") || "/"} replace />;
   return (
     <div className="grid min-h-full lg:grid-cols-[1.1fr_1fr]">
-      <section className="hidden flex-col justify-between bg-sidebar p-10 text-white border-r border-line lg:flex">
+      <section className="hidden flex-col justify-between bg-sidebar p-10 text-ink border-r border-line lg:flex">
         <Logo light />
         <div className="max-w-md">
           <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-balance">Mỗi con số AI đưa ra đều kèm phiếu kiểm.</h1>
-          <p className="mt-3 text-white/70">
+          <p className="mt-3 text-muted">
             LVDA đọc lineage của câu SQL do AI viết và so với định nghĩa chỉ số đã chứng nhận, trước khi số liệu tới tay người hỏi.
           </p>
-          <div className="mt-8 rounded-lg border border-white/15 bg-white/5 p-4 font-mono text-[12.5px]">
-            <div className="text-white/50">Doanh thu gộp tháng 3/2018</div>
-            <div className="mt-2 flex items-center gap-2"><span className="rounded bg-white/10 px-1.5 text-white/80">Lần 0</span>
-              <span className="text-bad">SUM(p.payment_value)</span><span className="text-white/40">→ V02 · V03</span></div>
-            <div className="mt-1.5 flex items-center gap-2"><span className="rounded bg-white/10 px-1.5 text-white/80">Lần 1</span>
-              <span className="text-good">SUM(i.price + i.freight_value)</span><span className="text-white/40">→ khớp</span></div>
+          <div className="mt-8 rounded-lg border border-line-strong bg-sunk p-4 font-mono text-[12.5px]">
+            <div className="text-faint">Doanh thu gộp tháng 3/2018</div>
+            <div className="mt-2 flex items-center gap-2"><span className="rounded bg-raised px-1.5 text-ink-2">Lần 0</span>
+              <span className="text-bad">SUM(p.payment_value)</span><span className="text-dim">→ V02 · V03</span></div>
+            <div className="mt-1.5 flex items-center gap-2"><span className="rounded bg-raised px-1.5 text-ink-2">Lần 1</span>
+              <span className="text-good">SUM(i.price + i.freight_value)</span><span className="text-dim">→ khớp</span></div>
             <div className="mt-3"><span className="rounded bg-surface px-1.5 py-1"><VerdictStamp verdict="green" size="sm" /></span></div>
           </div>
         </div>
-        <p className="text-[12px] text-white/40">Dữ liệu giả lập theo schema Olist. Phần viết SQL đang dùng LLM mô phỏng.</p>
+        <p className="text-[12px] text-dim">Dữ liệu giả lập theo schema Olist. Phần viết SQL đang dùng LLM mô phỏng.</p>
       </section>
-      <section className="grid place-items-center p-6">
+      <section className="relative grid place-items-center p-6">
+        <div className="absolute right-4 top-4"><ThemeToggle /></div>
         <div className="w-full max-w-sm">
           <div className="mb-6 lg:hidden"><Logo /></div>
           <h2 className="mb-5 text-[20px] font-semibold">Đăng nhập</h2>

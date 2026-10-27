@@ -56,6 +56,13 @@ def test_search_ranks_exact_name_first_and_ignores_diacritics(big_id):
     assert explorer.search(big_id, "", tags=("deprecated",))["total"] == 20
 
 
+def test_search_counts_by_layer_before_the_layer_filter(big_id):
+    every = explorer.search(big_id, "")
+    assert every["by_layer"] == {"0": 200, "1": 160, "2": 140} and every["total"] == 500
+    marts = explorer.search(big_id, "", layer=2)
+    assert marts["total"] == 140 and marts["by_layer"] == every["by_layer"]  # tab lớp vẫn thấy số của các lớp khác
+
+
 def test_lineage_neighbourhood_is_capped(big_id, monkeypatch):
     center = "ent_stg.stg_customer_accounts_erp"
     full = explorer.lineage(big_id, [center])

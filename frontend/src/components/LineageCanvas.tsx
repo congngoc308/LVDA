@@ -1,6 +1,7 @@
-import { Background, Controls, Handle, Position, ReactFlow, type Edge, type Node, type NodeProps } from "@xyflow/react";
+import { Controls, Handle, Position, ReactFlow, type Edge, type Node, type NodeProps } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useMemo } from "react";
+import { useTheme } from "../theme";
 import { cx } from "./ui";
 
 /** Canvas lineage theo bảng: mỗi bảng là một node, cột là hàng bên trong, cạnh đi từ đúng cột.
@@ -20,10 +21,12 @@ interface Link { a: string; aCol?: string; b: string; bCol?: string }
 const HEAD = 42; // tiêu đề bảng
 const ROW = 24; // một cột
 const FOOT = 28; // một dòng nút ở chân node
-const GAP = 26; // khoảng cách giữa các bảng trong một làn
-const LANE_W = 360;
+const GAP = 24; // khoảng cách giữa các bảng trong một làn
+const LANE_W = 290;
 const METRIC_H = 46;
 const METRIC_GAP = 12;
+// handle chỉ là điểm neo cạnh (không cho nối tay), nên ẩn chấm tròn mặc định
+const ANCHOR = { opacity: 0, pointerEvents: "none" } as const;
 const metricKey = (id: string) => `metric:${id}`;
 const tableOf = (col: string) => col.slice(0, col.lastIndexOf("."));
 const colOf = (col: string) => col.slice(col.lastIndexOf(".") + 1);
@@ -32,6 +35,12 @@ export function layerLabel(layer: number, maxLayer: number) {
   if (layer === 0) return "Nguồn";
   if (layer === maxLayer && maxLayer > 1) return "Mart";
   return maxLayer > 2 ? `Trung gian ${layer}` : "Trung gian";
+}
+
+/** Màu theo lớp (nhãn lớp, thanh phân bố của miền): nguồn xám, trung gian xanh nhạt, mart màu nhấn. */
+export function layerColor(layer: number, maxLayer: number) {
+  if (layer === 0) return "var(--color-dim)";
+  return layer === maxLayer ? "var(--color-accent)" : "var(--color-accent-mid)";
 }
 
 interface Handlers {
@@ -49,30 +58,30 @@ type LaneData = { label: string; count: number };
 
 function TableNode({ data }: NodeProps<Node<TableData>>) {
   return (
-    <div className={cx("w-[250px] rounded-lg border bg-surface shadow-sm",
-      data.center ? "border-accent" : "border-line-strong", data.selectedTable && "ring-2 ring-accent/40")}>
+    <div className={cx("w-[220px] rounded-md border bg-surface", data.center ? "border-accent" : "border-edge")}
+      style={data.selectedTable ? { boxShadow: "0 0 0 3px var(--color-accent-ring)" } : undefined}>
       <button type="button" style={{ height: HEAD }} onClick={(e) => { e.stopPropagation(); data.handlers.onTable(data.name); }}
-        className="flex w-full flex-col justify-center rounded-t-lg border-b border-line px-3 text-left hover:bg-sunk/60">
-        <span className="truncate text-[10.5px] uppercase tracking-wider text-faint">{data.name.split(".")[0]}{data.deprecated && " · ngừng dùng"}</span>
+        className="flex w-full flex-col justify-center gap-px rounded-t-md border-b border-line px-3 text-left hover:bg-sunk">
+        <span className={cx("truncate text-[11px]", data.center ? "text-accent" : "text-dim")}>{data.name.split(".")[0]}{data.deprecated && " · ngừng dùng"}{data.center && " · đang xem"}</span>
         <span className={cx("truncate font-mono text-[12.5px] font-medium", data.deprecated && "line-through decoration-faint")}>{data.title}</span>
       </button>
       {data.rows.map((r, i) => (
         <div key={r.name} onClick={(e) => { e.stopPropagation(); data.handlers.onColumn(data.name, r.name); }} style={{ height: ROW }}
-          className={cx("flex cursor-pointer items-center justify-between gap-2 px-3 text-[12px] hover:bg-sunk",
-            r.selected && "bg-accent-soft font-medium text-accent", r.dim && "opacity-40")}>
-          <span className="truncate font-mono">{r.name}</span>
-          {r.pii && <span className="shrink-0 rounded bg-warn-soft px-1 text-[10px] text-warn">PII</span>}
-          {r.hasIn && <Handle type="target" position={Position.Left} id={`in:${r.name}`} style={{ top: HEAD + i * ROW + ROW / 2 }} />}
-          {r.hasOut && <Handle type="source" position={Position.Right} id={`out:${r.name}`} style={{ top: HEAD + i * ROW + ROW / 2 }} />}
+          className={cx("flex cursor-pointer items-center justify-between gap-1.5 px-3 font-mono text-[12px] hover:bg-hover",
+            r.selected ? "bg-accent-soft/55 text-accent-2" : "text-ink-2", r.dim && "opacity-35")}>
+          <span className="truncate">{r.name}</span>
+          {r.pii && <span className="shrink-0 font-sans text-[10.5px] text-warn">PII</span>}
+          {r.hasIn && <Handle type="target" position={Position.Left} id={`in:${r.name}`} style={{ top: HEAD + i * ROW + ROW / 2, ...ANCHOR }} />}
+          {r.hasOut && <Handle type="source" position={Position.Right} id={`out:${r.name}`} style={{ top: HEAD + i * ROW + ROW / 2, ...ANCHOR }} />}
         </div>
       ))}
       {data.more > 0 && (
         <button type="button" style={{ height: FOOT }} onClick={(e) => { e.stopPropagation(); data.handlers.onShowAll(data.name); }}
-          className="w-full border-t border-line text-[11.5px] text-warn hover:bg-sunk">Đang ẩn {data.more} bảng ít dùng · xem hết</button>
+          className="w-full border-t border-line text-[11.5px] text-warn hover:bg-hover">Đang ẩn {data.more} bảng ít dùng · xem hết</button>
       )}
       {data.hidden > 0 && (
         <button type="button" style={{ height: FOOT }} onClick={(e) => { e.stopPropagation(); data.handlers.onExpand(data.name); }}
-          className="w-full rounded-b-lg border-t border-line text-[11.5px] text-accent hover:bg-sunk">+ {data.hidden} bảng liên quan</button>
+          className="w-full rounded-b-md border-t border-line text-[11.5px] text-accent hover:bg-hover">+ {data.hidden} bảng liên quan</button>
       )}
     </div>
   );
@@ -82,20 +91,17 @@ function MetricNode({ data }: NodeProps<Node<MetricData>>) {
   const ok = data.status === "certified";
   return (
     <button type="button" style={{ height: METRIC_H }} onClick={(e) => { e.stopPropagation(); data.handlers.onMetric(data.id); }}
-      className={cx("flex w-[220px] items-center gap-2 rounded-lg border bg-surface px-3 text-left shadow-sm hover:bg-sunk/60",
-        ok ? "border-good/60" : "border-warn/60", data.selected && "ring-2 ring-accent/40", data.dim && "opacity-40")}>
-      <span className={cx("size-2 shrink-0 rounded-full", ok ? "bg-good" : "bg-warn")} />
-      <span className="min-w-0">
-        <span className="block truncate text-[13px] font-medium">{data.name}</span>
-        <span className={cx("block text-[10.5px]", ok ? "text-good" : "text-warn")}>chỉ số · {ok ? "đã chứng nhận" : data.status}</span>
-      </span>
-      <Handle type="target" position={Position.Left} id="in" style={{ top: METRIC_H / 2 }} />
+      className={cx("flex w-[200px] flex-col justify-center gap-px rounded-md border bg-surface px-3 text-left hover:bg-sunk",
+        data.selected ? "border-accent" : ok ? "border-accent-line" : "border-warn/60", data.dim && "opacity-35")}>
+      <span className="block w-full truncate text-[13px] font-medium">{data.name}</span>
+      <span className={cx("block text-[11px]", ok ? "text-faint" : "text-warn")}>chỉ số · {ok ? "đã chứng nhận" : data.status}</span>
+      <Handle type="target" position={Position.Left} id="in" style={{ top: METRIC_H / 2, ...ANCHOR }} />
     </button>
   );
 }
 
 function LaneNode({ data }: NodeProps<Node<LaneData>>) {
-  return <div className="w-[250px] text-[11px] font-medium uppercase tracking-wider text-faint">{data.label} <span className="num font-normal">· {data.count}</span></div>;
+  return <div className="w-[220px] whitespace-nowrap text-[12px] text-faint">{data.label} <span className="num text-dim">{data.count}</span></div>;
 }
 
 const nodeTypes = { table: TableNode, metric: MetricNode, lane: LaneNode };
@@ -183,9 +189,9 @@ export function buildLineage(tables: LTable[], more: Record<string, number>, sel
   const edges: Edge[] = links.map((l, i) => {
     const on = hotLinks.has(l);
     return {
-      id: `e${i}`, type: "smoothstep", source: l.a, sourceHandle: l.aCol ? `out:${l.aCol}` : undefined,
+      id: `e${i}`, type: "default", source: l.a, sourceHandle: l.aCol ? `out:${l.aCol}` : undefined,
       target: l.b, targetHandle: l.bCol ? `in:${l.bCol}` : "in", zIndex: on ? 1 : 0,
-      style: { stroke: on ? "var(--color-accent)" : "var(--color-line-strong)", strokeWidth: on ? 2 : 1.25, opacity: sel && !on ? 0.2 : 1 },
+      style: { stroke: on ? "var(--color-accent)" : "var(--color-edge)", strokeWidth: on ? 2 : 1.25, opacity: sel && !on ? 0.25 : 1 },
     };
   });
   return { nodes, edges };
@@ -195,6 +201,7 @@ export function LineageCanvas({ tables, more, sel, onSelect, onExpand, onShowAll
   tables: LTable[]; more: Record<string, number>; sel: Sel; fitKey: string;
   onSelect: (s: Sel) => void; onExpand: (key: string) => void; onShowAll: (key: string) => void;
 }) {
+  const [theme] = useTheme();
   const { nodes, edges } = useMemo(() => buildLineage(tables, more, sel, {
     onColumn: (table, column) => onSelect({ kind: "column", table, column }),
     onTable: (table) => onSelect({ kind: "table", table }),
@@ -208,8 +215,7 @@ export function LineageCanvas({ tables, more, sel, onSelect, onExpand, onShowAll
       nodesDraggable={false} nodesConnectable={false} elementsSelectable={false} onlyRenderVisibleElements
       // node không kéo/chọn được thì React Flow tắt pointer-events; có onNodeClick để các nút bên trong node nhận click
       onNodeClick={() => {}}
-      onPaneClick={() => onSelect(null)} proOptions={{ hideAttribution: true }} colorMode="dark">
-      <Background gap={24} size={1} color="var(--color-line-strong)" />
+      onPaneClick={() => onSelect(null)} proOptions={{ hideAttribution: true }} colorMode={theme}>
       <Controls showInteractive={false} position="bottom-left" />
     </ReactFlow>
   );

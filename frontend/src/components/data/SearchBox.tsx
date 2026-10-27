@@ -62,22 +62,22 @@ export function SearchBox({ autoFocus = false }: { autoFocus?: boolean }) {
   };
 
   return (
-    <div className="relative w-full max-w-[520px] flex-1">
-      <label className="flex items-center gap-2 rounded-md border border-line-strong bg-surface px-2.5 py-1.5 focus-within:border-accent">
-        <Search size={15} className="text-faint" />
+    <div className="relative ml-2 w-[340px] min-w-[160px] shrink">
+      <label className="flex h-[34px] items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 focus-within:border-accent">
+        <Search size={14} className="shrink-0 text-dim" />
         <input ref={box} value={q} autoFocus={autoFocus} onChange={(e) => setQ(e.target.value)} role="combobox" aria-expanded={!!res}
-          aria-label="Tìm bảng hoặc cột" placeholder="Tìm bảng, cột hoặc mô tả (không cần dấu) · phím /"
+          aria-label="Tìm bảng hoặc cột (phím /)" placeholder="Tìm bảng, cột hoặc mô tả" title="Không cần gõ dấu · phím / để nhảy vào ô tìm"
           onKeyDown={(e) => {
             if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(a + 1, ordered.length - 1)); }
             if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
             if (e.key === "Enter" && ordered[active]) open(ordered[active]);
             if (e.key === "Escape") { setQ(""); setRes(null); }
           }}
-          className="w-full bg-transparent text-[13.5px] outline-none" />
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none" />
         {q && <button onClick={() => { setQ(""); setRes(null); }} className="rounded p-0.5 text-muted hover:bg-sunk" aria-label="Xóa từ khóa"><X size={14} /></button>}
       </label>
       {res && (
-        <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-[440px] overflow-y-auto rounded-md border border-line bg-surface py-1 shadow-lg">
+        <div className="absolute left-0 top-full z-30 mt-1 max-h-[440px] w-[480px] max-w-[90vw] overflow-y-auto rounded-lg border border-line-strong bg-surface py-1 shadow-lg">
           {res.total === 0 && <p className="px-3 py-3 text-[12.5px] text-muted">Không tìm thấy. Thử từ khóa ngắn hơn hoặc tên cột.</p>}
           {tables.length > 0 && <><div className="px-3 pb-0.5 pt-1.5 text-[10.5px] font-medium uppercase tracking-wider text-faint">Bảng</div><ul>{tables.map(row)}</ul></>}
           {columns.length > 0 && <><div className="px-3 pb-0.5 pt-1.5 text-[10.5px] font-medium uppercase tracking-wider text-faint">Cột</div><ul>{columns.map(row)}</ul></>}

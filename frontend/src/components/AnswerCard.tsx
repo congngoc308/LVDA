@@ -221,7 +221,7 @@ export function AnswerCard({ run, onFollowUp, onChange, onAskWith, compact = fal
               <div className="flex flex-wrap items-center gap-3">
                 {assumptions.length > 0 && (
                   <button onClick={() => setShowAssume(!showAssume)} aria-expanded={showAssume}
-                    className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-ink-2 hover:text-white">
+                    className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-ink-2 hover:text-ink">
                     <ChevronRight size={12} strokeWidth={2.4} className={cx("transition-transform", showAssume && "rotate-90")} />
                     Giả định <span className="text-dim">{assumptions.length}</span>
                   </button>
@@ -246,7 +246,7 @@ export function AnswerCard({ run, onFollowUp, onChange, onAskWith, compact = fal
         </div>
 
         {run.attempts.length > 0 && (
-          <section className="border-t border-line bg-[#0f101a]">
+          <section className="border-t border-line bg-panel">
             <div className="flex flex-wrap items-center gap-2.5 px-4 py-3">
               <span className="text-[13px] font-medium">Phiếu kiểm</span>
               <AttemptChips attempts={run.attempts} active={active} onSelect={setActive} />

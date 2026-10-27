@@ -164,3 +164,26 @@ export function fmtDate(iso: string | null) {
 export function shortCol(c: string) {
   return c.startsWith("mart.") ? c.slice(5) : c;
 }
+
+const pad = (n: number) => String(n).padStart(2, "0");
+/** Ngày theo kiểu 03/11/2026, có giờ thì 27/10/2026 09:41 (ngày trước, giờ sau). */
+export function fmtDay(iso: string, time = false) {
+  const d = new Date(iso);
+  const day = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  return time ? `${day} ${pad(d.getHours())}:${pad(d.getMinutes())}` : day;
+}
+
+/** Nhóm nút chọn một trong vài giá trị (quyền, hạn link, nhóm nhật ký). */
+export function Segmented<T extends string | number>({ value, onChange, options, label, size = "md", mono = false }: {
+  value: T; onChange: (v: T) => void; options: [T, string][]; label: string; size?: "sm" | "md"; mono?: boolean;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className={cx("inline-flex gap-[2px] border border-line bg-paper", size === "sm" ? "rounded-md p-[2px]" : "rounded-lg p-[3px]")}>
+      {options.map(([v, l]) => (
+        <button key={String(v)} role="radio" aria-checked={value === v} onClick={() => onChange(v)}
+          className={cx("whitespace-nowrap", size === "sm" ? "h-6 rounded px-[9px] text-[11.5px]" : "h-7 rounded-md px-3 text-[12.5px]", mono && "font-mono",
+            value === v ? "bg-line text-ink" : size === "sm" ? "text-dim hover:text-ink" : "text-faint hover:text-ink")}>{l}</button>
+      ))}
+    </div>
+  );
+}

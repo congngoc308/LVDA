@@ -12,7 +12,7 @@ export interface Home { tables: number; columns: number; views: number; max_laye
 export type SearchItem =
   | ({ kind: "table"; score: number } & Brief)
   | { kind: "column"; name: string; column: string; type: string; layer: number; domain_label: string; pii: boolean; deprecated: boolean; description: string | null; uses: number; score: number };
-export interface SearchRes { total: number; items: SearchItem[] }
+export interface SearchRes { total: number; by_layer: Record<string, number>; items: SearchItem[] }
 export interface LineageRes { tables: LTable[]; more: Record<string, number>; max_layer: number }
 export interface MetricRef { id: string; name_vi: string; status: string; role?: string; certified_at?: string | null; certified_by?: string | null }
 export interface Trust {

@@ -16,8 +16,8 @@ function toneStyle(t: NodeTone): { box?: CSSProperties; cls: string; sub: string
   const k = KIND[t];
   if (k) return { box: { borderColor: k, background: `color-mix(in oklch, ${k} 14%, var(--color-surface))` }, cls: "text-ink", sub: "" };
   switch (t) {
-    case "result": return { cls: "border-accent bg-accent text-on-accent", sub: "text-[#0e2d66]" };
-    case "mart": return { cls: "border-[#44485f] bg-sunk text-ink", sub: "text-faint" };
+    case "result": return { cls: "border-accent bg-accent text-on-accent", sub: "text-on-accent-2" };
+    case "mart": return { cls: "border-edge-2 bg-sunk text-ink", sub: "text-faint" };
     case "ghost": return { cls: "border-dashed border-bad bg-surface text-bad", sub: "text-bad" };
     case "bad": return { cls: "border-bad bg-bad-soft text-ink", sub: "text-bad" };
     default: return { cls: "border-line-strong bg-paper text-ink", sub: "text-faint" };
@@ -100,7 +100,7 @@ export function LineageGraph({ graph, minHeight = 160 }: { graph: Graph; minHeig
             const x1 = a.x + a.w, y1 = a.y + NODE_H / 2, x2 = b.x, y2 = b.y + NODE_H / 2;
             const mx = (x1 + x2) / 2;
             const on = !!lit && lit.has(e.from) && lit.has(e.to);
-            const stroke = e.kind === "ghost" ? "var(--color-bad)" : on ? "var(--color-accent)" : "#44485f";
+            const stroke = e.kind === "ghost" ? "var(--color-bad)" : on ? "var(--color-accent)" : "var(--color-edge-2)";
             return (
               <path key={i} d={`M${x1} ${y1} C${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`} fill="none" stroke={stroke}
                 strokeWidth={on ? 1.6 : 1.2} strokeDasharray={e.kind === "data" ? undefined : "4 4"}
@@ -132,8 +132,8 @@ export function LineageGraph({ graph, minHeight = 160 }: { graph: Graph; minHeig
 export function GraphLegend({ hint = true }: { hint?: boolean }) {
   return (
     <div className="flex flex-wrap items-center gap-x-[18px] gap-y-1.5 border-t border-line-soft pt-3 text-[11.5px] text-faint">
-      <span className="inline-flex items-center gap-1.5"><span className="w-[18px] border-t-[1.5px] border-[#61668a]" />dữ liệu chạy vào</span>
-      <span className="inline-flex items-center gap-1.5"><span className="w-[18px] border-t-[1.5px] border-dashed border-[#61668a]" />điều kiện (lọc, join, chia nhóm)</span>
+      <span className="inline-flex items-center gap-1.5"><span className="w-[18px] border-t-[1.5px] border-legend" />dữ liệu chạy vào</span>
+      <span className="inline-flex items-center gap-1.5"><span className="w-[18px] border-t-[1.5px] border-dashed border-legend" />điều kiện (lọc, join, chia nhóm)</span>
       <span className="inline-flex items-center gap-1.5"><span className="h-[9px] w-3 rounded-[2px] border border-dashed border-bad" />thiếu so với định nghĩa</span>
       <span className="inline-flex items-center gap-1.5"><span className="h-[9px] w-3 rounded-[2px] border border-bad" />vi phạm luật</span>
       {hint && <span className="ml-auto">Rê chuột vào một ô để xem đường đi</span>}
