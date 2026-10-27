@@ -33,7 +33,7 @@ function MonthBars({ rows, measure }: { rows: unknown[][]; measure: ResultColumn
               <path d={`M${x},${H - pad.b} V${top + Math.min(4, h)} q0,-4 4,-4 h${w - 8} q4,0 4,4 V${H - pad.b} Z`}
                 fill={hover === i ? "oklch(0.84 0.1 235)" : "var(--color-accent)"} opacity={hover === null || hover === i ? 1 : 0.55} />
               {(rows.length <= 12 || i % Math.ceil(rows.length / 12) === 0) && (
-                <text x={pad.l + i * bw + bw / 2} y={H - 6} textAnchor="middle" fontSize="10" fill="var(--color-faint)" fontFamily="JetBrains Mono">{formatDim(r[0])}</text>
+                <text x={pad.l + i * bw + bw / 2} y={H - 6} textAnchor="middle" fontSize="10" fill="var(--color-faint)" fontFamily="IBM Plex Mono">{formatDim(r[0])}</text>
               )}
             </g>
           );
@@ -67,33 +67,36 @@ export function ResultView({ run, limit = 12 }: { run: Run; limit?: number }) {
   return (
     <div className="flex flex-col gap-3">
       {isMonth && res.rows.length > 1 && <MonthBars rows={res.rows} measure={measure} />}
-      <div className="scroll-thin overflow-x-auto rounded-md border border-line">
-        <table className="w-full text-[13px]">
-          <thead className="bg-sunk text-left text-[12px] text-muted">
-            <tr>{cols.map((c) => <th key={c.key} className={cx("px-3 py-1.5 font-medium", c.kind === "measure" && "text-right")}>{c.label}</th>)}</tr>
+      <div className="scroll-thin overflow-x-auto">
+        <table className="w-full border-collapse font-mono text-[13px]">
+          <thead className="text-left font-sans text-[12px] text-dim">
+            <tr className="border-b border-line">
+              {cols.map((c, j) => <th key={c.key} className={cx("pb-2 pr-4 font-normal", c.kind === "measure" && "text-right", j === 0 && cols.length <= 2 && "w-full")}>{c.label}</th>)}
+              {hasDim && <th className="hidden pb-2 sm:table-cell" aria-hidden />}
+            </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={i} className="border-t border-line">
-                {cols.map((c, j) => (
-                  <td key={c.key} className={cx("px-3 py-1.5", c.kind === "measure" ? "num text-right" : "font-mono text-[12.5px]")}>
-                    {c.kind === "measure" && hasDim && j === mIdx ? (
-                      <div className="flex items-center justify-end gap-2">
-                        <span>{formatValue(r[j], c.format, c.unit)}</span>
-                        <span className="hidden h-2 w-28 rounded-sm bg-sunk sm:block" aria-hidden>
-                          <span className="block h-2 rounded-sm bg-accent" style={{ width: `${(Math.abs(nums[i]) / max) * 100}%` }} />
-                        </span>
-                      </div>
-                    ) : c.kind === "measure" ? formatValue(r[j], c.format, c.unit) : formatDim(r[j])}
+              <tr key={i} className="border-b border-line-soft">
+                {cols.map((c) => (
+                  <td key={c.key} className={cx("whitespace-nowrap py-[9px] pr-4", c.kind === "measure" ? "num text-right text-ink-2" : "text-ink")}>
+                    {c.kind === "measure" ? formatValue(r[cols.indexOf(c)], c.format, c.unit) : formatDim(r[cols.indexOf(c)])}
                   </td>
                 ))}
+                {hasDim && (
+                  <td className="hidden w-[min(220px,25%)] min-w-20 py-[9px] sm:table-cell" aria-hidden>
+                    <span className="flex h-1 overflow-hidden rounded-sm bg-line">
+                      <span className="bg-accent" style={{ width: `${(Math.abs(nums[i]) / max) * 100}%` }} />
+                    </span>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       {res.rows.length > limit && (
-        <button className="w-fit text-[12.5px] text-accent hover:underline" onClick={() => setAll(!all)}>
+        <button className="w-fit text-[12.5px] text-accent hover:text-accent-2" onClick={() => setAll(!all)}>
           {all ? "Thu gọn" : `Xem đủ ${res.rows.length} dòng${res.truncated ? " (đã cắt ở 1.000)" : ""}`}
         </button>
       )}

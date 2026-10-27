@@ -32,7 +32,7 @@ export function TablePicker({ tables, picks, onChange, disabled = false, synced 
         <div role="tablist" aria-label="Lọc bảng" className="flex gap-1">
           {([["all", "Tất cả"], ["attention", "Cần chú ý"], ["chosen", "Đã chọn"]] as [Filter, string][]).map(([k, l]) => (
             <button key={k} role="tab" aria-selected={filter === k} onClick={() => { setFilter(k); setLimit(PAGE); }}
-              className={cx("rounded-full px-2.5 py-0.5 text-[12px]", filter === k ? "bg-navy text-white" : "bg-sunk text-ink-2 hover:bg-line")}>
+              className={cx("rounded-full px-2.5 py-0.5 text-[12px]", filter === k ? "bg-accent text-on-accent" : "bg-sunk text-ink-2 hover:bg-line")}>
               {l} <span className="num opacity-70">{counts[k]}</span>
             </button>
           ))}

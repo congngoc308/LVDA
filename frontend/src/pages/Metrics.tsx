@@ -1,10 +1,10 @@
-﻿import { BadgeCheck, Download, FilePlus2, PencilLine, Upload } from "lucide-react";
+﻿import { BadgeCheck, Download, PencilLine, Plus, Search, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildAnswerGraph, GraphLegend, LineageGraph, type Graph } from "../components/LineageGraph";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError, apiText } from "../api";
 import { SqlView } from "../components/Sql";
-import { Button, cx, Drawer, ErrorNote, fmtDate, Modal, PageHeader, Pill, shortCol } from "../components/ui";
+import { Button, cx, Drawer, ErrorNote, fmtDate, Modal, shortCol } from "../components/ui";
 import { describeFilter } from "../format";
 import { useSession } from "../session";
 import type { Fingerprint } from "../types";
@@ -100,10 +100,15 @@ function ImportModal({ open, onClose, onDone }: { open: boolean; onClose: () => 
 }
 
 function StatusPill({ status }: { status: string }) {
-  if (status === "certified") return <Pill tone="good"><BadgeCheck size={12} /> đã chứng nhận</Pill>;
-  if (status === "stale") return <Pill tone="bad">cần chứng nhận lại</Pill>;
-  if (status === "deprecated") return <Pill>ngừng dùng</Pill>;
-  return <Pill tone="warn">nháp</Pill>;
+  const [label, tone, dot] = status === "certified" ? ["Đã chứng nhận", "bg-good-soft text-good", "bg-good"]
+    : status === "stale" ? ["Cần chứng nhận lại", "bg-bad-soft text-bad", "bg-bad"]
+    : status === "deprecated" ? ["Ngừng dùng", "bg-raised text-muted", "bg-muted"]
+    : ["Nháp", "bg-warn-soft text-warn", "bg-warn"];
+  return (
+    <span className={cx("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-[9px] py-[3px] text-[12px] font-medium", tone)}>
+      <span className={cx("size-1.5 rounded-full", dot)} />{label}
+    </span>
+  );
 }
 
 function metricGraph(d: MetricDetail): Graph | null {
@@ -137,7 +142,7 @@ function VersionDiff({ versions }: { versions: MetricDetail["versions"] }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="border-b border-line px-5 py-4">
-      <h3 className="mb-2 text-[12px] font-medium uppercase tracking-wider text-faint">{title}</h3>
+      <h3 className="mb-2 text-[12px] font-medium text-faint">{title}</h3>
       {children}
     </section>
   );
@@ -228,40 +233,65 @@ export default function MetricsPage() {
     } catch (e) { setError(e instanceof Error ? e.message : "Không xuất được."); }
   };
 
-  const certified = list.filter((m) => m.status === "certified").length;
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<"all" | "cert" | "draft">("all");
+  const isCert = (m: Metric) => m.status === "certified";
+  const q = query.trim().toLowerCase();
+  const shown = list.filter((m) => (filter === "all" || (filter === "cert") === isCert(m)) && (!q || `${m.name_vi} ${m.id}`.toLowerCase().includes(q)));
+  const filters: ["all" | "cert" | "draft", string, number][] = [
+    ["all", "Tất cả", list.length], ["cert", "Đã chứng nhận", list.filter(isCert).length], ["draft", "Nháp", list.filter((m) => !isCert(m)).length],
+  ];
+  const grid = "grid grid-cols-[minmax(150px,1fr)_minmax(180px,1.5fr)_minmax(140px,1fr)_150px] gap-4";
 
   return (
-    <div className="flex h-full flex-col">
-      <PageHeader title="Chỉ số"
-        subtitle={<>Định nghĩa chuẩn mà bộ kiểm định dùng để so. {certified}/{list.length} chỉ số đã chứng nhận; chỉ số nháp vẫn trả lời được nhưng luôn ở mức Vàng.</>}
-        actions={<>
-          <Button onClick={exportYaml}><Download size={15} /> Xuất YAML</Button>
-          {eng && <Button onClick={() => setImporting(true)}><Upload size={15} /> Nhập YAML / MetricFlow</Button>}
-          {eng && <Button variant="primary" onClick={() => setEditor(NEW_TEMPLATE)}><FilePlus2 size={16} /> Thêm chỉ số</Button>}
-        </>} />
-      <div className="scroll-thin min-h-0 flex-1 overflow-y-auto p-8">
+    <div className="scroll-thin h-full overflow-y-auto">
+      <div className="flex flex-col gap-4 px-7 py-6">
+        <div className="flex flex-wrap items-center gap-4">
+          <p className="flex-[1_1_360px] text-[13px] leading-relaxed text-muted">Định nghĩa chuẩn mà bộ kiểm định dùng để so. Chỉ số nháp vẫn trả lời được nhưng luôn ở mức Vàng.</p>
+          <div className="flex flex-wrap gap-2">
+            {eng && <Button onClick={() => setImporting(true)}><Download size={13} /> Nhập YAML / MetricFlow</Button>}
+            <Button onClick={exportYaml}><Upload size={13} /> Xuất YAML</Button>
+            {eng && <Button variant="primary" onClick={() => setEditor(NEW_TEMPLATE)}><Plus size={13} strokeWidth={2.4} /> Thêm chỉ số</Button>}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex h-8 w-[260px] max-w-full items-center gap-2 rounded-md border border-line-strong px-2.5 focus-within:border-accent">
+            <Search size={13} className="text-dim" />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm tên hoặc mã chỉ số" aria-label="Tìm chỉ số"
+              className="min-w-0 flex-1 bg-transparent text-[13px] outline-none focus-visible:outline-none" />
+          </label>
+          <div className="flex gap-0.5 rounded-md border border-line-strong p-0.5" role="group" aria-label="Lọc theo trạng thái">
+            {filters.map(([k, label, n]) => (
+              <button key={k} onClick={() => setFilter(k)} aria-pressed={filter === k}
+                className={cx("flex h-[26px] items-center gap-1.5 whitespace-nowrap rounded px-2.5 text-[12.5px]", filter === k ? "bg-raised text-ink" : "text-muted hover:text-ink")}>
+                {label}<span className="font-mono text-[11px] text-dim">{n}</span>
+              </button>
+            ))}
+          </div>
+        </div>
         <ErrorNote>{error}</ErrorNote>
-        <div className="overflow-hidden rounded-lg border border-line bg-surface">
-          <table className="w-full text-[13.5px]">
-            <thead className="bg-sunk text-left text-[12px] text-muted">
-              <tr><th className="px-4 py-2 font-medium">Chỉ số</th><th className="px-4 py-2 font-medium">Bộ lọc bắt buộc</th>
-                <th className="px-4 py-2 font-medium">Cột thời gian</th><th className="px-4 py-2 font-medium">Trạng thái</th><th className="px-4 py-2 text-right font-medium">Phiên bản</th></tr>
-            </thead>
-            <tbody>
-              {list.map((m) => (
-                <tr key={m.id} onClick={() => nav(`/metrics/${m.id}`)} className={cx("cursor-pointer border-t border-line hover:bg-sunk/60", metricId === m.id && "bg-accent-soft/50")}>
-                  <td className="px-4 py-2.5">
-                    <div className="font-medium">{m.name_vi}</div>
-                    <div className="font-mono text-[11.5px] text-muted">{m.id}</div>
-                  </td>
-                  <td className="px-4 py-2.5 font-mono text-[11.5px] text-ink-2">{m.required_filters.map(describeFilter).join("; ") || "—"}</td>
-                  <td className="px-4 py-2.5 font-mono text-[11.5px] text-ink-2">{shortCol(m.time_column)}</td>
-                  <td className="px-4 py-2.5"><StatusPill status={m.status} /></td>
-                  <td className="num px-4 py-2.5 text-right">v{m.version}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="scroll-thin overflow-x-auto rounded-lg border border-line">
+          <div className="min-w-[680px]">
+            <div className={cx(grid, "border-b border-line bg-paper px-4 py-[9px] text-[12px] text-faint")}>
+              <span>Chỉ số</span><span>Bộ lọc bắt buộc</span><span>Cột thời gian</span><span>Trạng thái</span>
+            </div>
+            {shown.map((m) => {
+              const filters = m.required_filters.map(describeFilter).join("; ");
+              return (
+                <button key={m.id} onClick={() => nav(`/metrics/${m.id}`)}
+                  className={cx(grid, "w-full items-center border-b border-line-soft px-4 py-[11px] text-left last:border-b-0 hover:bg-[#191b2a]", metricId === m.id && "bg-hover")}>
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="text-[13px] text-ink">{m.name_vi}</span>
+                    <span className="font-mono text-[11.5px] text-faint">{m.id} · v{m.version}</span>
+                  </span>
+                  <span className={cx("break-words font-mono text-[12px] leading-normal", filters ? "text-ink-2" : "text-dim")}>{filters || "không có"}</span>
+                  <span className="break-words font-mono text-[12px] text-muted">{shortCol(m.time_column)}</span>
+                  <span className="justify-self-start"><StatusPill status={m.status} /></span>
+                </button>
+              );
+            })}
+            {shown.length === 0 && <div className="p-7 text-center text-[13px] text-faint">{list.length ? "Không có chỉ số nào khớp." : "Chưa có chỉ số nào."}</div>}
+          </div>
         </div>
       </div>
 

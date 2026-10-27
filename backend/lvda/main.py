@@ -49,4 +49,4 @@ for r in (auth.router, workspace.router, data_api.router, explore_api.router, da
 
 @app.get("/api/health")
 def health():
-    return {"ok": True}
+    return {"ok": True, "llm": config.LLM_PROVIDER}

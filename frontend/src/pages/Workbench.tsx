@@ -1,22 +1,23 @@
-﻿import { ArrowRight, BookMarked, ChevronRight, Code2, History, Loader2, MessageSquareText, Plus, Search, SlidersHorizontal } from "lucide-react";
+﻿import { ChevronRight, History, Loader2, Search, SlidersHorizontal, SquarePen, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api";
 import { AnswerCard } from "../components/AnswerCard";
 import { Composer, type ComposerHandle } from "../components/Composer";
-import { Button, cx, Drawer, ErrorNote, timeAgo, useWide, VerdictDot } from "../components/ui";
+import { Button, cx, Drawer, ErrorNote, timeAgo, useWide } from "../components/ui";
 import { useSession } from "../session";
 import type { MetricLite, Run, RunLite } from "../types";
 import MetricsPage from "./Metrics";
 import SettingsPage from "./Settings";
 
-const QUESTIONS = [
-  "Doanh thu tháng 3/2018 là bao nhiêu?",
-  "Doanh thu theo loại thanh toán năm 2017",
-  "Số khách hàng theo bang quý 2/2018",
-  "Tỉ lệ giao trễ theo tháng năm 2018",
-  "Điểm đánh giá trung bình",
-  "Doanh thu gộp lấy từ đâu?",
+// mỗi câu mẫu một chấm màu, chỉ để mắt dễ bám dòng
+const QUESTIONS: [string, string][] = [
+  ["Doanh thu tháng 3/2018 là bao nhiêu?", "var(--color-accent)"],
+  ["Doanh thu theo loại thanh toán năm 2017", "var(--color-cyan)"],
+  ["Số khách hàng theo bang quý 2/2018", "var(--color-warn)"],
+  ["Tỉ lệ giao trễ theo tháng năm 2018", "oklch(0.74 0.17 25)"],
+  ["Điểm đánh giá trung bình", "var(--color-warn)"],
+  ["Doanh thu gộp lấy từ đâu?", "var(--color-pink)"],
 ];
 const SQLS = [
   { label: "Join nhân dòng", tag: "FAN-OUT", sql: "SELECT p.payment_type, SUM(i.price + i.freight_value) AS gmv\nFROM mart.fct_order_items i\nJOIN mart.fct_orders o ON o.order_id = i.order_id\nJOIN mart.fct_payments p ON p.order_id = o.order_id\nWHERE o.order_status = 'delivered'\nGROUP BY p.payment_type" },
@@ -32,12 +33,14 @@ function Pending({ text }: { text: string }) {
     return () => clearInterval(t);
   }, []);
   return (
-    <div className="rounded-lg border border-dashed border-line-strong bg-surface px-5 py-4" aria-live="polite">
-      <p className="font-medium">{text}</p>
-      <div className="mt-2 flex flex-wrap gap-3 text-[12.5px] text-muted">
+    <div className="flex flex-col gap-4" aria-live="polite">
+      <div className="flex justify-end">
+        <div className="max-w-[80%] rounded-[10px_10px_2px_10px] bg-raised px-3.5 py-2.5 text-[15px] leading-normal">{text}</div>
+      </div>
+      <div className="flex flex-wrap gap-3 rounded-[10px] border border-dashed border-line-strong bg-surface px-4 py-3.5 text-[12.5px] text-faint">
         {STEPS.map((s, i) => (
           <span key={s} className={cx("inline-flex items-center gap-1.5", i <= step && "text-ink-2")}>
-            {i === step ? <Loader2 size={13} className="animate-spin" /> : <span className={cx("size-1.5 rounded-full", i < step ? "bg-good" : "bg-line-strong")} />}{s}
+            {i === step ? <Loader2 size={13} className="animate-spin text-accent" /> : <span className={cx("size-1.5 rounded-full", i < step ? "bg-accent" : "bg-line-strong")} />}{s}
           </span>
         ))}
       </div>
@@ -45,31 +48,40 @@ function Pending({ text }: { text: string }) {
   );
 }
 
-/** Cấu hình agent nằm trong tab Hỏi & kiểm: chỉ số (định nghĩa chuẩn để kiểm) và, với engineer, luật, mô hình, truy vấn mẫu. */
-function AgentConfig({ section, engineer, onSection }: { section: "metrics" | "settings"; engineer: boolean; onSection: (s: "metrics" | "settings") => void }) {
-  const items = [
-    { key: "metrics" as const, label: "Chỉ số", sub: "định nghĩa chuẩn mà bộ kiểm định so", Icon: BookMarked },
-    ...(engineer ? [{ key: "settings" as const, label: "Luật, mô hình & truy vấn mẫu", sub: "mức độ từng luật, model, giới hạn", Icon: SlidersHorizontal }] : []),
-  ];
-  // viewer chỉ có một mục: bỏ menu, dành chỗ cho bảng chỉ số
-  if (!engineer) return (
-    <div className="flex h-full flex-col">
-      <p className="border-b border-line bg-sunk px-5 py-2 text-[12.5px] text-muted">Bạn có quyền xem. Sửa định nghĩa chỉ số cần engineer.</p>
-      <div className="min-h-0 flex-1"><MetricsPage /></div>
-    </div>
-  );
+type ConfigSection = "metrics" | "settings";
+
+/** Cấu hình agent nằm trong tab Hỏi & kiểm: chỉ số (định nghĩa chuẩn để kiểm) và, với engineer, luật, mô hình, giới hạn, truy vấn mẫu. */
+function AgentConfig({ open, section, engineer, onSection, onClose }: {
+  open: boolean; section: ConfigSection; engineer: boolean; onSection: (s: ConfigSection) => void; onClose: () => void;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    // đang mở một hộp thoại (sửa YAML, chi tiết chỉ số) thì Esc để hộp thoại đó tự đóng
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector("[role=dialog], [data-drawer]") && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+  if (!open) return null;
+  const tabs: [ConfigSection, string][] = [["metrics", "Chỉ số"], ...(engineer ? [["settings", "Luật, mô hình & giới hạn"] as [ConfigSection, string]] : [])];
   return (
-    <div className="flex h-full">
-      <nav className="w-[230px] shrink-0 border-r border-line bg-sunk/50 p-2" aria-label="Mục cấu hình">
-        {items.map((i) => (
-          <button key={i.key} onClick={() => onSection(i.key)} aria-current={section === i.key ? "page" : undefined}
-            className={cx("flex w-full items-start gap-2 rounded-md px-2.5 py-2 text-left", section === i.key ? "bg-surface shadow-sm" : "hover:bg-surface/70")}>
-            <i.Icon size={15} className={cx("mt-0.5 shrink-0", section === i.key ? "text-accent" : "text-muted")} />
-            <span><span className={cx("block text-[13px]", section === i.key && "font-medium")}>{i.label}</span><span className="block text-[11.5px] text-muted">{i.sub}</span></span>
-          </button>
-        ))}
-      </nav>
-      <div className="min-w-0 flex-1">{section === "settings" ? <SettingsPage /> : <MetricsPage />}</div>
+    <div className="fixed inset-0 z-30 flex justify-end">
+      <div className="absolute inset-0 bg-[rgba(5,6,8,0.6)]" onClick={onClose} />
+      <div role="region" aria-label="Cấu hình agent" className="relative grid h-full w-[min(1000px,94vw)] grid-rows-[auto_minmax(0,1fr)] border-l border-line-strong bg-surface">
+        <div className="flex items-end gap-6 border-b border-line pl-7 pr-4">
+          <span className="whitespace-nowrap pb-4 pt-[18px] text-[14px] font-semibold">Cấu hình agent</span>
+          <div className="flex min-w-0 flex-1 gap-1" role="tablist">
+            {tabs.map(([k, label]) => (
+              <button key={k} role="tab" aria-selected={section === k} onClick={() => onSection(k)}
+                className={cx("h-11 whitespace-nowrap px-2.5 text-[13px]", section === k ? "text-ink shadow-[inset_0_-2px_0_var(--color-accent)]" : "text-faint hover:text-ink-2")}>{label}</button>
+            ))}
+          </div>
+          <button onClick={onClose} title="Đóng" aria-label="Đóng" className="mb-3 grid size-[30px] shrink-0 place-items-center rounded-md text-muted hover:bg-line hover:text-ink"><X size={15} /></button>
+        </div>
+        <div className="flex min-h-0 min-w-0 flex-col overflow-hidden">
+          {!engineer && <p className="border-b border-line bg-sunk px-7 py-2 text-[12.5px] text-faint">Bạn có quyền xem. Sửa định nghĩa chỉ số cần engineer.</p>}
+          <div className="min-h-0 flex-1">{section === "settings" && engineer ? <SettingsPage /> : <MetricsPage />}</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -82,7 +94,7 @@ export default function Workbench() {
   const eng = db?.role === "engineer";
   // /metrics… và /settings mở panel cấu hình ngay trên màn hình hỏi, phiên hỏi vẫn giữ nguyên bên dưới
   const configOpen = pathname.startsWith("/metrics") || pathname.startsWith("/settings");
-  const configSection = pathname.startsWith("/settings") && eng ? "settings" : "metrics";
+  const configSection: ConfigSection = pathname.startsWith("/settings") && eng ? "settings" : "metrics";
   const [feed, setFeed] = useState<Run[]>([]);
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -112,7 +124,7 @@ export default function Workbench() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // đang chờ thì cuộn xuống ô chờ; có câu trả lời mới thì cuộn tới ĐẦU thẻ để thấy ngay con dấu và con số
+  // đang chờ thì cuộn xuống ô chờ; có câu trả lời mới thì cuộn tới ĐẦU câu hỏi để thấy ngay con dấu và con số
   const lastId = feed.at(-1)?.id;
   useEffect(() => { if (pending) bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [pending]);
   useEffect(() => { if (lastId) document.getElementById(`run-${lastId}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [lastId]);
@@ -141,48 +153,44 @@ export default function Workbench() {
 
   const replace = (r: Run) => setFeed((f) => f.map((x) => (x.id === r.id ? r : x)));
   const empty = feed.length === 0 && !pending;
-  const certified = metrics.filter((m) => m.status === "certified").length;
   const stale = metrics.filter((m) => m.status === "stale").length;
 
   const [histQuery, setHistQuery] = useState("");
   const [histHidden, setHistHidden] = useState(false);
   const wide = useWide();
   const showHistory = wide && !histHidden;
-  const valueTone = (h: RunLite) => (h.status === "held" || h.final_verdict === "red" ? "text-bad" : h.final_verdict === "yellow" ? "text-warn" : h.final_verdict === "green" ? "text-good" : "text-ink-2");
+  const valueTone = (h: RunLite) => (h.status === "held" || h.final_verdict === "red" ? "text-bad" : h.final_verdict === "yellow" ? "text-warn" : h.final_verdict === "green" ? "text-accent" : "text-faint");
   const today = new Date().toDateString();
   const groups: { label: string; items: RunLite[] }[] = [];
   for (const h of history) {
     if (histQuery && !h.question.toLowerCase().includes(histQuery.trim().toLowerCase())) continue;
     const d = new Date(h.created_at);
-    const label = d.toDateString() === today ? "HÔM NAY" : d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const label = d.toDateString() === today ? "Hôm nay" : d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
     const g = groups.find((x) => x.label === label) ?? (groups.push({ label, items: [] }), groups[groups.length - 1]);
     g.items.push(h);
   }
   const historyList = (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="shrink-0 px-3.5 pb-1.5 pt-3">
-        <label className="flex h-[34px] items-center gap-2 rounded-lg border border-line bg-paper px-2.5 focus-within:border-accent">
-          <Search size={14} className="text-faint" />
-          <input value={histQuery} onChange={(e) => setHistQuery(e.target.value)} placeholder="Tìm câu hỏi…" aria-label="Tìm câu hỏi đã hỏi"
+      <div className="shrink-0 px-3 pb-1 pt-3">
+        <label className="flex h-8 items-center gap-2 rounded-md border border-line px-2.5 focus-within:border-accent">
+          <Search size={13} className="text-dim" />
+          <input value={histQuery} onChange={(e) => setHistQuery(e.target.value)} placeholder="Tìm câu hỏi" aria-label="Tìm câu hỏi đã hỏi"
             className="min-w-0 flex-1 bg-transparent text-[13px] outline-none focus-visible:outline-none" />
         </label>
       </div>
-      <div className="scroll-thin min-h-0 flex-1 overflow-y-auto px-2 pb-4 pt-1">
-        {groups.length === 0 && <p className="px-3 py-6 text-center text-[12.5px] text-faint">{histQuery ? "Không có câu nào khớp." : "Chưa có câu hỏi nào."}</p>}
+      <div className="scroll-thin min-h-0 flex-1 overflow-y-auto px-1.5 pb-4 pt-1">
+        {groups.length === 0 && <p className="px-3 py-6 text-center text-[12.5px] text-dim">{histQuery ? "Không có câu nào khớp." : "Chưa có câu hỏi nào."}</p>}
         {groups.map((g) => (
-          <div key={g.label} className="mt-2.5 flex flex-col gap-px">
-            <span className="px-3 pb-1.5 pt-1 font-mono text-[10.5px] font-medium tracking-[0.12em] text-faint">{g.label}</span>
+          <div key={g.label} className="mt-3 flex flex-col">
+            <span className="px-3 pb-1.5 pt-0.5 text-[11px] text-dim">{g.label}</span>
             {g.items.map((h) => (
               <button key={h.id} onClick={() => { setHistoryOpen(false); nav(`/runs/${h.id}`); }}
-                className={cx("flex gap-2.5 rounded-lg px-3 py-[9px] text-left hover:bg-[#151c29]", runId === h.id && "bg-[#151d2c] shadow-[inset_0_0_0_1px_#26324a]")}>
-                <span className="mt-[7px]"><VerdictDot verdict={h.status === "held" ? "red" : h.final_verdict} /></span>
-                <span className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className={cx("line-clamp-2 text-[13.5px] leading-snug text-ink-2", h.input_kind === "sql" && "font-mono text-[12px]")}>{h.question}</span>
-                  <span className="flex items-center gap-2 text-[11.5px] text-faint">
-                    {h.headline && <span className={cx("truncate font-mono text-[12px] font-medium", valueTone(h))}>{h.headline}</span>}
-                    <span className="flex-1" />
-                    <span className="shrink-0 font-mono">{g.label === "HÔM NAY" ? timeAgo(h.created_at) : new Date(h.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</span>
-                  </span>
+                className={cx("flex flex-col gap-[3px] rounded-md px-3 py-2 text-left hover:bg-[#181a28]", runId === h.id && "bg-hover")}>
+                <span className={cx("line-clamp-2 text-pretty text-[13px] leading-[1.4] text-ink-2", h.input_kind === "sql" && "font-mono text-[12px]")}>{h.question}</span>
+                <span className="flex items-center gap-2 text-[11.5px]">
+                  <span className={cx("truncate font-mono", valueTone(h))}>{h.headline ?? (h.status === "held" ? "giữ lại" : "—")}</span>
+                  <span className="flex-1" />
+                  <span className="shrink-0 text-dim">{g.label === "Hôm nay" ? timeAgo(h.created_at) : new Date(h.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</span>
                 </span>
               </button>
             ))}
@@ -192,106 +200,102 @@ export default function Workbench() {
     </div>
   );
   const newSession = () => { setHistoryOpen(false); nav("/"); setFeed([]); setContext(null); };
+  const closeConfig = useCallback(() => nav(metricId ? "/metrics" : "/"), [nav, metricId]);
 
   return (
     <div className="flex h-full">
       <section className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-[60px] shrink-0 items-center gap-3.5 border-b border-line bg-[rgba(10,14,21,0.6)] px-7 text-[12.5px] backdrop-blur-md">
-          {catalogOnly ? <span className="text-faint">Database này chỉ để duyệt danh mục và lineage</span> : (
-            <span className="text-faint">Agent kiểm theo <b className="num font-medium text-ink-2">{certified}/{metrics.length}</b> chỉ số đã chứng nhận</span>
-          )}
-          {stale > 0 && <button onClick={() => nav("/metrics")} className="rounded-full bg-bad-soft px-2 py-0.5 text-bad hover:underline">{stale} chỉ số cần chứng nhận lại</button>}
-          <span className="ml-auto flex items-center gap-2">
-            {!catalogOnly && (
-              <button onClick={() => nav("/metrics")} className="flex h-[34px] items-center gap-2 rounded-lg border border-[#263045] bg-[#121825] px-3 text-[13px] font-medium text-ink transition-colors hover:border-[#3a4864] hover:bg-[#161d2b]">
-                <SlidersHorizontal size={15} /> Chỉ số & cấu hình
-              </button>
-            )}
-            {!showHistory && (
-              <button onClick={() => (wide ? setHistHidden(false) : setHistoryOpen(true))} title="Lịch sử" aria-label="Mở lịch sử"
-                className="grid size-[34px] place-items-center rounded-lg border border-[#263045] bg-[#121825] text-muted hover:border-[#3a4864] hover:text-ink">
-                <History size={16} />
-              </button>
-            )}
-          </span>
-        </header>        <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto flex max-w-[980px] flex-col gap-4 px-8 pb-10 pt-[52px]">
-            {catalogOnly && (
-              <div className="pt-6">
-                <h1 className="text-[22px] font-semibold tracking-tight">{db?.name}</h1>
-                <p className="mt-1.5 max-w-2xl text-muted">
-                  Database này chưa có chỉ số chuẩn nên agent chưa hỏi và kiểm được. Bạn vẫn xem được toàn bộ danh mục và lineage của nó.
-                </p>
-                <div className="mt-4 flex gap-2">
-                  <Button variant="primary" onClick={() => nav("/data")}>Mở danh mục dữ liệu</Button>
-                </div>
-              </div>
-            )}
-            {empty && !catalogOnly && (
-              <div className="flex flex-col gap-8 pt-6">
-                <div className="flex flex-col gap-3.5">
-                  <h1 className="text-balance text-[34px] font-bold leading-[1.2] tracking-[-0.02em] text-[#f3f5f9]">
-                    Hỏi một con số. <span className="lv-gradient-text">Mỗi câu trả lời đi kèm phiếu kiểm.</span>
-                  </h1>
-                  <p className="max-w-[740px] text-pretty text-[15px] leading-[1.7] text-muted">
-                    Agent viết SQL trên {db?.name}. Trước khi chạy, bộ kiểm định so lineage của câu SQL với định nghĩa chỉ số đã chứng nhận:
-                    cột đo, bộ lọc, đường join, cột thời gian. Sai thì tự sửa, vẫn sai thì giữ lại không công bố.
-                  </p>
-                </div>
-                <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr))]">
-                  <section className="flex min-w-0 flex-col rounded-[14px] border border-line bg-[rgba(17,23,35,0.85)] p-2 backdrop-blur-sm">
-                    <div className="flex items-center gap-2 px-3 py-2.5">
-                      <MessageSquareText size={15} className="text-accent" />
-                      <span className="font-mono text-[11.5px] font-medium tracking-[0.1em] text-ink-2">HỎI SỐ LIỆU</span>
-                      <span className="ml-auto text-[12px] text-faint">Chọn để điền</span>
-                    </div>
-                    {QUESTIONS.map((q, i) => (
-                      <button key={q} onClick={() => composer.current?.fill(q)}
-                        className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[14px] text-ink-2 transition-colors hover:bg-[#182031] hover:text-white">
-                        <span className="w-4 shrink-0 font-mono text-[11px] text-faint">0{i + 1}</span>
-                        <span className="flex-1">{q}</span>
-                        <ArrowRight size={14} className="text-[#4a5670] group-hover:text-accent" />
-                      </button>
-                    ))}
-                  </section>
-                  <section className="flex min-w-0 flex-col rounded-[14px] border border-line bg-[rgba(17,23,35,0.85)] p-2 backdrop-blur-sm">
-                    <div className="flex items-center gap-2 px-3 py-2.5">
-                      <Code2 size={15} className="text-accent" />
-                      <span className="font-mono text-[11.5px] font-medium tracking-[0.1em] text-ink-2">DÁN SQL ĐỂ KIỂM</span>
-                      <span className="ml-auto text-[12px] text-faint">Lỗi thường gặp</span>
-                    </div>
-                    <div className="flex flex-col gap-2 px-1 pb-1.5 pt-0.5">
-                      {SQLS.map((s) => (
-                        <button key={s.label} onClick={() => composer.current?.fill(s.sql)}
-                          className="flex w-full min-w-0 flex-col gap-2 overflow-hidden rounded-[10px] border border-[#202939] bg-[#0e131d] px-3.5 py-3 text-left transition-colors hover:border-[oklch(0.5_0.1_235)] hover:bg-[#111826]">
-                          <span className="flex w-full items-center gap-2">
-                            <span className="flex-1 text-[14px] font-semibold text-ink">{s.label}</span>
-                            <span className="whitespace-nowrap rounded-[5px] bg-bad-soft px-[7px] py-0.5 font-mono text-[10.5px] font-medium text-bad">{s.tag}</span>
-                          </span>
-                          <code className="block w-full truncate font-mono text-[12px] text-faint">
-                            <span className="text-[oklch(0.78_0.13_300)]">SELECT</span>{s.sql.split("\n")[0].replace(/^SELECT/, "")}
-                          </code>
-                        </button>
-                      ))}
-                    </div>
-                  </section>
-                </div>
-              </div>
-            )}            {feed.map((r) => (
-              <div key={r.id} id={`run-${r.id}`} className="scroll-mt-4">
-                <AnswerCard run={r} onChange={replace}
-                  onAskWith={(q, metricId) => ask(q, { simulate: true, metricId })}
-                  onFollowUp={(run) => { setContext(run); composer.current?.focus(); }} />
-              </div>
-            ))}
-            {pending && <Pending text={pending} />}
-            <ErrorNote>{error}</ErrorNote>
-            <div ref={bottom} />
+        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line px-6">
+          <div className="flex min-w-0 flex-1 items-center gap-3 text-[13px] text-faint">
+            <button onClick={newSession} className="whitespace-nowrap text-[17px] font-semibold tracking-[-0.01em] text-ink">Hỏi &amp; kiểm</button>
+            {catalogOnly && <span className="truncate">Database này chỉ để duyệt danh mục và lineage</span>}
+            {stale > 0 && <button onClick={() => nav("/metrics")} className="whitespace-nowrap rounded-full bg-bad-soft px-2 py-0.5 text-[12px] text-bad hover:underline">{stale} chỉ số cần chứng nhận lại</button>}
           </div>
+          {!catalogOnly && (
+            <button onClick={() => nav("/metrics")} className="flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-md border border-edge px-3 text-[13px] hover:bg-hover">
+              <SlidersHorizontal size={14} /> Chỉ số &amp; cấu hình
+            </button>
+          )}
+          {!showHistory && (
+            <button onClick={() => (wide ? setHistHidden(false) : setHistoryOpen(true))} title="Lịch sử" aria-label="Mở lịch sử"
+              className="grid size-8 shrink-0 place-items-center rounded-md border border-line-strong text-muted hover:bg-hover hover:text-ink">
+              <History size={15} />
+            </button>
+          )}
+        </header>
+        <div className="scroll-thin min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+          {catalogOnly && (
+            <div className="mx-auto flex max-w-[920px] flex-col gap-3 px-8 pb-10 pt-16">
+              <h1 className="text-[28px] font-semibold leading-[1.3] tracking-[-0.015em]">{db?.name}</h1>
+              <p className="max-w-[680px] text-[14.5px] leading-[1.7] text-muted">
+                Database này chưa có chỉ số chuẩn nên agent chưa hỏi và kiểm được. Bạn vẫn xem được toàn bộ danh mục và lineage của nó.
+              </p>
+              <div className="mt-2"><Button variant="primary" onClick={() => nav("/data")}>Mở danh mục dữ liệu</Button></div>
+            </div>
+          )}
+          {empty && !catalogOnly && (
+            <div className="mx-auto flex max-w-[920px] flex-col gap-10 px-8 pb-10 pt-16">
+              <div className="flex flex-col gap-3">
+                <h1 className="text-balance text-[28px] font-semibold leading-[1.3] tracking-[-0.015em]">
+                  Hỏi một con số. <span className="text-accent">Mỗi câu trả lời đi kèm phiếu kiểm.</span>
+                </h1>
+                <p className="max-w-[680px] text-pretty text-[14.5px] leading-[1.7] text-muted">
+                  Agent viết SQL trên {db?.name}. Trước khi chạy, bộ kiểm định so lineage của câu SQL với định nghĩa chỉ số đã chứng nhận:
+                  cột đo, bộ lọc, đường join, cột thời gian. Sai thì tự sửa, vẫn sai thì giữ lại không công bố.
+                </p>
+              </div>
+              <div className="grid gap-8 [grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))]">
+                <section className="flex min-w-0 flex-col">
+                  <div className="flex items-baseline gap-2 border-b border-line pb-2.5">
+                    <h2 className="text-[13px] font-semibold text-accent">Hỏi số liệu</h2>
+                    <span className="ml-auto text-[12px] text-dim">Chọn để điền</span>
+                  </div>
+                  {QUESTIONS.map(([q, c]) => (
+                    <button key={q} onClick={() => composer.current?.fill(q)}
+                      className="group flex items-center gap-3 border-b border-[#191b27] py-[11px] text-left text-[14px] text-ink-2 hover:text-white">
+                      <span className="size-2 shrink-0 rounded-[2px]" style={{ background: c }} aria-hidden />
+                      <span className="flex-1">{q}</span>
+                      <span className="text-[13px] text-[#44485f] group-hover:text-accent" aria-hidden>→</span>
+                    </button>
+                  ))}
+                </section>
+                <section className="flex min-w-0 flex-col">
+                  <div className="flex items-baseline gap-2 border-b border-line pb-2.5">
+                    <h2 className="text-[13px] font-semibold text-cyan">Dán SQL để kiểm</h2>
+                    <span className="ml-auto text-[12px] text-dim">Lỗi thường gặp</span>
+                  </div>
+                  {SQLS.map((s) => (
+                    <button key={s.label} onClick={() => composer.current?.fill(s.sql)}
+                      className="flex w-full min-w-0 flex-col gap-1.5 overflow-hidden border-b border-[#191b27] py-3 text-left hover:bg-surface">
+                      <span className="flex w-full items-center gap-2">
+                        <span className="flex-1 text-[14px] text-ink">{s.label}</span>
+                        <span className="whitespace-nowrap rounded bg-bad-solid px-[7px] py-0.5 font-mono text-[11px] font-medium text-[#ffe3dc]">{s.tag}</span>
+                      </span>
+                      <code className="block w-full truncate font-mono text-[12px] text-faint">{s.sql.split("\n")[0]}</code>
+                    </button>
+                  ))}
+                </section>
+              </div>
+            </div>
+          )}
+          {(feed.length > 0 || pending || error) && (
+            <div className="mx-auto flex max-w-[880px] flex-col gap-8 px-8 pb-10 pt-7">
+              {feed.map((r) => (
+                <div key={r.id} id={`run-${r.id}`} className="scroll-mt-4">
+                  <AnswerCard run={r} bubble onChange={replace}
+                    onAskWith={(q, metricId) => ask(q, { simulate: true, metricId })}
+                    onFollowUp={(run) => { setContext(run); composer.current?.focus(); }} />
+                </div>
+              ))}
+              {pending && <Pending text={pending} />}
+              <ErrorNote>{error}</ErrorNote>
+              <div ref={bottom} />
+            </div>
+          )}
         </div>
         {!catalogOnly && (
-          <div className="shrink-0 bg-[linear-gradient(to_bottom,rgba(10,14,21,0),#0a0e15_35%)] px-8 pb-[22px] pt-2">
-            <div className="mx-auto max-w-[980px]">
+          <div className="shrink-0 px-8 pb-5">
+            <div className="mx-auto max-w-[856px]">
               <Composer ref={composer} onSubmit={ask} busy={!!pending} context={context} clearContext={() => setContext(null)} metrics={metrics.filter((m) => m.status === "certified")} />
             </div>
           </div>
@@ -299,28 +303,26 @@ export default function Workbench() {
       </section>
 
       {showHistory && (
-        <aside className="flex w-[316px] shrink-0 flex-col border-l border-line bg-sidebar" aria-label="Lịch sử của bạn">
-          <div className="flex h-[60px] shrink-0 items-center gap-2 border-b border-line pl-5 pr-3.5">
-            <h2 className="flex-1 whitespace-nowrap text-[14px] font-semibold">Lịch sử của bạn</h2>
-            <button onClick={newSession} className="flex h-[30px] items-center gap-1.5 rounded-[7px] border border-[oklch(0.4_0.08_235)] bg-[oklch(0.25_0.05_240)] px-2.5 text-[12.5px] font-medium text-[oklch(0.88_0.08_235)] hover:bg-[oklch(0.29_0.06_240)]">
-              <Plus size={13} strokeWidth={2.4} /> Phiên mới
+        <aside className="flex w-[296px] shrink-0 flex-col border-l border-line" aria-label="Lịch sử của bạn">
+          <div className="flex h-14 shrink-0 items-center gap-1.5 border-b border-line pl-[18px] pr-2.5">
+            <h2 className="flex-1 whitespace-nowrap text-[13.5px] font-medium">Lịch sử</h2>
+            <button onClick={newSession} title="Phiên mới" aria-label="Phiên mới" className="grid size-7 place-items-center rounded-md border border-line-strong hover:bg-hover">
+              <SquarePen size={14} />
             </button>
-            <button onClick={() => setHistHidden(true)} title="Ẩn lịch sử" aria-label="Ẩn lịch sử" className="grid size-[30px] place-items-center rounded-[7px] text-faint hover:bg-[#182030] hover:text-ink">
-              <ChevronRight size={15} />
+            <button onClick={() => setHistHidden(true)} title="Ẩn lịch sử" aria-label="Ẩn lịch sử" className="grid size-7 place-items-center rounded-md text-dim hover:bg-hover hover:text-ink">
+              <ChevronRight size={14} />
             </button>
           </div>
           {historyList}
         </aside>
-      )}      <Drawer open={historyOpen} onClose={() => setHistoryOpen(false)} width={340}
-        title={<span className="flex items-center gap-3">Lịch sử của bạn <button className="text-[12px] font-normal text-accent hover:underline" onClick={newSession}>Phiên mới</button></span>}>
-        <div className="flex h-full flex-col pt-2">{historyList}</div>
+      )}
+      <Drawer open={historyOpen} onClose={() => setHistoryOpen(false)} width={320}
+        title={<span className="flex items-center gap-3">Lịch sử <button className="text-[12px] font-normal text-accent hover:text-accent-2" onClick={newSession}>Phiên mới</button></span>}>
+        <div className="flex h-full flex-col">{historyList}</div>
       </Drawer>
 
-      <Drawer open={configOpen} width={1180} title="Cấu hình agent"
-        // đang mở chi tiết một chỉ số thì Esc chỉ đóng chi tiết, không đóng cả panel
-        onClose={() => nav(metricId ? "/metrics" : "/")}>
-        <AgentConfig section={configSection} engineer={!!eng} onSection={(s) => nav(s === "settings" ? "/settings" : "/metrics")} />
-      </Drawer>
+      <AgentConfig open={configOpen} section={configSection} engineer={!!eng} onClose={closeConfig}
+        onSection={(s) => nav(s === "settings" ? "/settings" : "/metrics")} />
     </div>
   );
 }

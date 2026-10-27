@@ -1,4 +1,4 @@
-﻿import { AlertTriangle, CheckCircle2, CircleSlash, Hand, ShieldAlert, X } from "lucide-react";
+﻿import { AlertTriangle, Check, CheckCircle2, CircleSlash, Hand, ShieldAlert, X } from "lucide-react";
 import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import type { Verdict } from "../types";
 
@@ -22,12 +22,12 @@ type BtnVariant = "primary" | "secondary" | "ghost" | "danger";
 export function Button({ variant = "secondary", size = "md", className, ...rest }:
   ButtonHTMLAttributes<HTMLButtonElement> & { variant?: BtnVariant; size?: "sm" | "md" }) {
   const v = {
-    primary: "bg-navy text-white hover:bg-navy-2 disabled:bg-faint",
-    secondary: "bg-surface text-ink border border-line-strong hover:bg-sunk disabled:text-faint",
-    ghost: "text-ink-2 hover:bg-sunk disabled:text-faint",
-    danger: "bg-surface text-bad border border-bad/40 hover:bg-bad-soft",
+    primary: "bg-accent text-on-accent hover:bg-accent-2 disabled:bg-line-strong disabled:text-dim",
+    secondary: "bg-transparent text-ink border border-line-strong hover:bg-hover disabled:text-dim",
+    ghost: "text-ink-2 hover:bg-hover disabled:text-dim",
+    danger: "bg-transparent text-bad border border-bad/40 hover:bg-bad-soft",
   }[variant];
-  const s = size === "sm" ? "h-7 px-2.5 text-[13px] gap-1.5" : "h-9 px-3.5 gap-2";
+  const s = size === "sm" ? "h-7 px-2.5 text-[12.5px] gap-1.5" : "h-8 px-3 text-[13px] gap-1.5";
   return <button {...rest} className={cx("inline-flex items-center justify-center rounded-md font-medium transition-colors disabled:cursor-not-allowed", v, s, className)} />;
 }
 
@@ -37,7 +37,7 @@ export const VERDICT_META: Record<string, { label: string; long: string; cls: st
   red: { label: "Đỏ", long: "Sai cấu trúc", cls: "text-bad border-bad", soft: "bg-bad-soft text-bad", Icon: ShieldAlert },
   blocked: { label: "Chặn", long: "Câu lệnh bị chặn", cls: "text-bad border-bad", soft: "bg-bad-soft text-bad", Icon: CircleSlash },
   held: { label: "Giữ lại", long: "Không công bố số", cls: "text-held border-held", soft: "bg-held-soft text-held", Icon: Hand },
-  unchecked: { label: "Chưa kiểm", long: "Chưa kiểm", cls: "text-muted border-line-strong", soft: "bg-sunk text-muted", Icon: AlertTriangle },
+  unchecked: { label: "Chưa kiểm", long: "Chưa kiểm", cls: "text-muted border-line-strong", soft: "bg-raised text-muted", Icon: AlertTriangle },
 };
 
 /** Con dấu kiểm định: thành phần nhận diện của LVDA. Luôn có chữ + biểu tượng, không chỉ màu. */
@@ -46,9 +46,9 @@ export function VerdictStamp({ verdict, held = false, size = "md" }: { verdict: 
   const meta = VERDICT_META[held ? "held" : verdict] ?? VERDICT_META.unchecked;
   const { Icon } = meta;
   return (
-    <span className={cx("inline-flex shrink-0 items-center gap-1.5 rounded-[5px] border-[1.5px] font-mono font-medium uppercase tracking-wider",
-      size === "sm" ? "px-1.5 py-px text-[10.5px]" : "px-2 py-1 text-[11.5px]", meta.cls)}>
-      <Icon size={size === "sm" ? 12 : 14} strokeWidth={2.2} aria-hidden />
+    <span className={cx("inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[5px] font-medium",
+      size === "sm" ? "h-5 px-1.5 text-[11.5px]" : "h-6 px-[9px] text-[12px]", meta.soft)}>
+      {verdict === "green" && !held ? <Check size={size === "sm" ? 10 : 11} strokeWidth={2.8} aria-hidden /> : <Icon size={size === "sm" ? 11 : 12} strokeWidth={2.2} aria-hidden />}
       {size === "md" ? `Đã kiểm · ${meta.label}` : meta.label}
     </span>
   );
@@ -61,21 +61,21 @@ export function VerdictDot({ verdict }: { verdict: Verdict | null }) {
 }
 
 export function RuleChip({ rule, severity }: { rule: string; severity: string }) {
-  const cls = { high: "bg-bad-soft text-bad", medium: "bg-warn-soft text-warn", low: "bg-sunk text-ink-2", info: "bg-accent-soft text-accent" }[severity] ?? "bg-sunk";
+  const cls = { high: "bg-bad-soft text-bad", medium: "bg-warn-soft text-warn", low: "bg-raised text-ink-2", info: "bg-accent-soft text-accent" }[severity] ?? "bg-raised";
   return <span className={cx("rounded px-1.5 py-px font-mono text-[11px] font-medium", cls)}>{rule}</span>;
 }
 
 export function Pill({ children, tone = "neutral", className }: { children: ReactNode; tone?: "neutral" | "accent" | "good" | "warn" | "bad" | "held"; className?: string }) {
-  const t = { neutral: "bg-sunk text-ink-2", accent: "bg-accent-soft text-accent", good: "bg-good-soft text-good", warn: "bg-warn-soft text-warn", bad: "bg-bad-soft text-bad", held: "bg-held-soft text-held" }[tone];
+  const t = { neutral: "bg-raised text-ink-2", accent: "bg-accent-soft text-accent", good: "bg-good-soft text-good", warn: "bg-warn-soft text-warn", bad: "bg-bad-soft text-bad", held: "bg-held-soft text-held" }[tone];
   return <span className={cx("inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-medium", t, className)}>{children}</span>;
 }
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line bg-[rgba(10,14,21,0.6)] backdrop-blur-md px-8 py-5">
+    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line px-6 py-4">
       <div className="min-w-0">
-        <h1 className="text-[20px] font-semibold tracking-tight text-balance">{title}</h1>
-        {subtitle && <p className="mt-1 max-w-3xl text-muted">{subtitle}</p>}
+        <h1 className="text-[17px] font-semibold tracking-[-0.01em] text-balance">{title}</h1>
+        {subtitle && <p className="mt-1 max-w-3xl text-[13px] text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>
@@ -105,11 +105,11 @@ export function Drawer({ open, onClose, title, children, width = 560 }: { open: 
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/55" onMouseDown={onClose}>
-      <aside className="flex h-full max-w-full flex-col border-l border-line bg-surface shadow-xl" style={{ width }} onMouseDown={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-40 flex justify-end bg-[rgba(5,6,8,0.6)]" onMouseDown={onClose}>
+      <aside data-drawer className="flex h-full max-w-[94vw] flex-col border-l border-line-strong bg-surface" style={{ width }} onMouseDown={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
-          <div className="min-w-0 font-semibold">{title}</div>
-          <button className="rounded p-1 text-muted hover:bg-sunk" onClick={onClose} aria-label="Đóng"><X size={18} /></button>
+          <div className="min-w-0 text-[14px] font-semibold">{title}</div>
+          <button className="grid size-[30px] place-items-center rounded-md text-muted hover:bg-line hover:text-ink" onClick={onClose} aria-label="Đóng" title="Đóng"><X size={15} /></button>
         </div>
         <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">{children}</div>
       </aside>
@@ -127,10 +127,10 @@ export function Modal({ open, onClose, title, children, footer, width = 640 }: {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onMouseDown={onClose}>
-      <div role="dialog" aria-label={title} className="flex max-h-[90vh] w-full flex-col rounded-lg border border-line bg-surface shadow-2xl" style={{ maxWidth: width }} onMouseDown={(e) => e.stopPropagation()}>
+      <div role="dialog" aria-label={title} className="flex max-h-[90vh] w-full flex-col rounded-[10px] border border-line-strong bg-surface shadow-2xl" style={{ maxWidth: width }} onMouseDown={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
           <div className="font-semibold">{title}</div>
-          <button className="rounded p-1 text-muted hover:bg-sunk" onClick={onClose} aria-label="Đóng"><X size={18} /></button>
+          <button className="grid size-[30px] place-items-center rounded-md text-muted hover:bg-line hover:text-ink" onClick={onClose} aria-label="Đóng"><X size={15} /></button>
         </div>
         <div className="scroll-thin min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
         {footer && <div className="flex justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>}
@@ -145,7 +145,7 @@ export function ErrorNote({ children }: { children: ReactNode }) {
 }
 
 export function Kbd({ children }: { children: ReactNode }) {
-  return <kbd className="rounded-[5px] border border-b-2 border-[#263045] bg-[#141b28] px-1.5 py-px font-mono text-[11px] text-ink-2">{children}</kbd>;
+  return <kbd className="rounded-[5px] border border-b-2 border-line-strong bg-sunk px-1.5 py-px font-mono text-[11px] text-ink-2">{children}</kbd>;
 }
 
 export function timeAgo(iso: string): string {

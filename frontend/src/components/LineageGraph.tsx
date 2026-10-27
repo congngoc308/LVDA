@@ -1,26 +1,31 @@
-﻿import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { describeFilter } from "../format";
 import type { Finding, RunLineage } from "../types";
 import { cx, shortCol } from "./ui";
 
-export type NodeTone = "raw" | "mart" | "op" | "cond" | "result" | "ghost" | "bad" | "metric";
+export type NodeTone = "raw" | "mart" | "op" | "cond" | "join" | "group" | "result" | "ghost" | "bad" | "metric";
 export interface GNode { id: string; col: number; label: string; sub?: string; tone: NodeTone; tip?: string }
 export interface GEdge { from: string; to: string; kind: "data" | "control" | "ghost" }
 export interface Graph { columns: string[]; nodes: GNode[]; edges: GEdge[] }
 
-const TONE: Record<NodeTone, string> = {
-  raw: "border-line-strong bg-sunk text-ink-2",
-  mart: "border-accent/40 bg-accent-soft text-accent",
-  op: "border-ink/25 bg-surface text-ink",
-  cond: "border-warn/40 bg-warn-soft text-ink",
-  result: "border-navy bg-navy text-white",
-  ghost: "border-bad border-dashed bg-surface text-bad",
-  bad: "border-bad bg-bad-soft text-bad ring-2 ring-bad/20",
-  metric: "border-good/40 bg-good-soft text-good",
+// màu theo loại phép tính: phép đo xanh dương, bộ lọc vàng, join xanh lơ, chia nhóm hồng
+const KIND: Partial<Record<NodeTone, string>> = {
+  op: "var(--color-accent)", cond: "var(--color-warn)", join: "var(--color-cyan)", group: "var(--color-pink)", metric: "var(--color-accent)",
 };
-const NODE_H = 44;
+function toneStyle(t: NodeTone): { box?: CSSProperties; cls: string; sub: string } {
+  const k = KIND[t];
+  if (k) return { box: { borderColor: k, background: `color-mix(in oklch, ${k} 14%, var(--color-surface))` }, cls: "text-ink", sub: "" };
+  switch (t) {
+    case "result": return { cls: "border-accent bg-accent text-on-accent", sub: "text-[#0e2d66]" };
+    case "mart": return { cls: "border-[#44485f] bg-sunk text-ink", sub: "text-faint" };
+    case "ghost": return { cls: "border-dashed border-bad bg-surface text-bad", sub: "text-bad" };
+    case "bad": return { cls: "border-bad bg-bad-soft text-ink", sub: "text-bad" };
+    default: return { cls: "border-line-strong bg-paper text-ink", sub: "text-faint" };
+  }
+}
+const NODE_H = 38;
 const GAP_Y = 10;
-const HEAD = 26;
+const HEAD = 24;
 
 /** Đồ thị lineage nhiều tầng: cạnh liền là dữ liệu, cạnh đứt là điều kiện (lọc/join/chia nhóm). */
 export function LineageGraph({ graph, minHeight = 160 }: { graph: Graph; minHeight?: number }) {
@@ -31,26 +36,31 @@ export function LineageGraph({ graph, minHeight = 160 }: { graph: Graph; minHeig
   useLayoutEffect(() => {
     const el = wrap.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => setWidth(Math.max(e.contentRect.width, 520)));
+    const ro = new ResizeObserver(([e]) => setWidth(Math.max(e.contentRect.width, 640)));
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
   const ncol = graph.columns.length;
-  const colW = width / ncol;
-  const nodeW = Math.min(colW - 36, 260);
   const byCol = graph.columns.map((_, i) => graph.nodes.filter((n) => n.col === i));
   const maxRows = Math.max(...byCol.map((c) => c.length), 1);
-  const height = Math.max(minHeight, HEAD + maxRows * (NODE_H + GAP_Y) + 8);
+  const height = Math.max(minHeight, HEAD + maxRows * (NODE_H + GAP_Y));
   const pos = useMemo(() => {
-    const p: Record<string, { x: number; y: number }> = {};
+    // cột phép tính rộng hơn vì nhãn là biểu thức SQL
+    const weights = byCol.map((_, i) => (i === 2 && ncol === 4 ? 1.2 : 1));
+    const unit = width / weights.reduce((a, b) => a + b, 0);
+    const p: Record<string, { x: number; y: number; w: number }> = {};
+    let x = 0;
     byCol.forEach((col, i) => {
+      const w = Math.min(weights[i] * unit - 28, 260);
       const total = col.length * NODE_H + (col.length - 1) * GAP_Y;
       const top = HEAD + (height - HEAD - total) / 2;
-      col.forEach((n, j) => { p[n.id] = { x: i * colW + (colW - nodeW) / 2, y: top + j * (NODE_H + GAP_Y) }; });
+      col.forEach((n, j) => { p[n.id] = { x, y: top + j * (NODE_H + GAP_Y), w }; });
+      p[`__col${i}`] = { x, y: 0, w };
+      x += weights[i] * unit;
     });
     return p;
-  }, [byCol, colW, nodeW, height]);
+  }, [byCol, ncol, width, height]);
 
   // Đường đi qua node đang rê chuột (cả phía trên lẫn phía dưới)
   const lit = useMemo(() => {
@@ -78,30 +88,23 @@ export function LineageGraph({ graph, minHeight = 160 }: { graph: Graph; minHeig
   useEffect(() => setHover(null), [graph]);
 
   return (
-    <div ref={wrap} className="relative w-full overflow-x-auto" style={{ height }}>
+    <div ref={wrap} className="scroll-thin relative w-full overflow-x-auto" style={{ height }}>
       <div className="relative" style={{ width, height }}>
         {graph.columns.map((c, i) => (
-          <div key={c} className="absolute top-0 text-center text-[10.5px] font-medium uppercase tracking-wider text-faint" style={{ left: i * colW, width: colW }}>{c}</div>
+          <div key={c} className="absolute top-0 text-[11px] text-dim" style={{ left: pos[`__col${i}`]?.x ?? 0 }}>{c}</div>
         ))}
-        <svg className="absolute inset-0" width={width} height={height} aria-hidden>
-          <defs>
-            {["data", "control", "ghost"].map((k) => (
-              <marker key={k} id={`arr-${k}`} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
-                <path d="M0,0 L8,4 L0,8 z" fill={k === "data" ? "var(--color-muted)" : k === "control" ? "var(--color-warn)" : "var(--color-bad)"} />
-              </marker>
-            ))}
-          </defs>
+        <svg className="absolute inset-0 overflow-visible" width={width} height={height} aria-hidden>
           {graph.edges.map((e, i) => {
             const a = pos[e.from], b = pos[e.to];
             if (!a || !b) return null;
-            const x1 = a.x + nodeW, y1 = a.y + NODE_H / 2, x2 = b.x - 2, y2 = b.y + NODE_H / 2;
+            const x1 = a.x + a.w, y1 = a.y + NODE_H / 2, x2 = b.x, y2 = b.y + NODE_H / 2;
             const mx = (x1 + x2) / 2;
-            const on = !lit || (lit.has(e.from) && lit.has(e.to));
-            const stroke = e.kind === "data" ? "var(--color-muted)" : e.kind === "control" ? "var(--color-warn)" : "var(--color-bad)";
+            const on = !!lit && lit.has(e.from) && lit.has(e.to);
+            const stroke = e.kind === "ghost" ? "var(--color-bad)" : on ? "var(--color-accent)" : "#44485f";
             return (
-              <path key={i} d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`} fill="none" stroke={stroke}
-                strokeWidth={on && lit ? 2 : 1.4} strokeDasharray={e.kind === "data" ? undefined : "5 4"}
-                opacity={on ? 0.85 : 0.12} markerEnd={`url(#arr-${e.kind})`} />
+              <path key={i} d={`M${x1} ${y1} C${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`} fill="none" stroke={stroke}
+                strokeWidth={on ? 1.6 : 1.2} strokeDasharray={e.kind === "data" ? undefined : "4 4"}
+                opacity={!lit || on ? 1 : 0.25} />
             );
           })}
         </svg>
@@ -109,13 +112,15 @@ export function LineageGraph({ graph, minHeight = 160 }: { graph: Graph; minHeig
           const p = pos[n.id];
           if (!p) return null;
           const dim = lit && !lit.has(n.id);
+          const st = toneStyle(n.tone);
+          const kind = KIND[n.tone];
           return (
             <div key={n.id} onMouseEnter={() => setHover(n.id)} onMouseLeave={() => setHover(null)} title={n.tip ?? n.label}
               tabIndex={0} onFocus={() => setHover(n.id)} onBlur={() => setHover(null)}
-              className={cx("absolute flex flex-col justify-center rounded-md border px-2 leading-tight transition-opacity", TONE[n.tone], dim && "opacity-30")}
-              style={{ left: p.x, top: p.y, width: nodeW, height: NODE_H }}>
+              className={cx("absolute flex flex-col justify-center rounded-[5px] border px-[9px] py-1 leading-tight transition-opacity", st.cls, dim && "opacity-30")}
+              style={{ left: p.x, top: p.y, width: p.w, height: NODE_H, ...st.box }}>
               <span className="truncate font-mono text-[11.5px]">{n.label}</span>
-              {n.sub && <span className={cx("truncate text-[10.5px]", n.tone === "result" ? "text-white/70" : "opacity-75")}>{n.sub}</span>}
+              {n.sub && <span className={cx("truncate text-[10.5px]", st.sub)} style={kind ? { color: kind } : undefined}>{n.sub}</span>}
             </div>
           );
         })}
@@ -124,14 +129,14 @@ export function LineageGraph({ graph, minHeight = 160 }: { graph: Graph; minHeig
   );
 }
 
-export function GraphLegend() {
+export function GraphLegend({ hint = true }: { hint?: boolean }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] text-muted">
-      <span className="inline-flex items-center gap-1.5"><svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke="var(--color-muted)" strokeWidth="1.6" /></svg>dữ liệu chảy vào</span>
-      <span className="inline-flex items-center gap-1.5"><svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke="var(--color-warn)" strokeWidth="1.6" strokeDasharray="5 4" /></svg>điều kiện (lọc, join, chia nhóm)</span>
-      <span className="inline-flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm border border-dashed border-bad" />thiếu so với định nghĩa</span>
-      <span className="inline-flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm border border-bad bg-bad-soft" />vi phạm luật</span>
-      <span>Rê chuột vào một ô để xem đường đi.</span>
+    <div className="flex flex-wrap items-center gap-x-[18px] gap-y-1.5 border-t border-line-soft pt-3 text-[11.5px] text-faint">
+      <span className="inline-flex items-center gap-1.5"><span className="w-[18px] border-t-[1.5px] border-[#61668a]" />dữ liệu chạy vào</span>
+      <span className="inline-flex items-center gap-1.5"><span className="w-[18px] border-t-[1.5px] border-dashed border-[#61668a]" />điều kiện (lọc, join, chia nhóm)</span>
+      <span className="inline-flex items-center gap-1.5"><span className="h-[9px] w-3 rounded-[2px] border border-dashed border-bad" />thiếu so với định nghĩa</span>
+      <span className="inline-flex items-center gap-1.5"><span className="h-[9px] w-3 rounded-[2px] border border-bad" />vi phạm luật</span>
+      {hint && <span className="ml-auto">Rê chuột vào một ô để xem đường đi</span>}
     </div>
   );
 }
@@ -194,14 +199,14 @@ export function buildAnswerGraph(ln: RunLineage, findings: Finding[], resultLabe
   ln.joins.forEach((j, i) => {
     const hit = joinFindings.find((f) => f.evidence && (f.evidence.includes(j.sql) || j.sql.includes(f.evidence)));
     const id = `join:${i}`;
-    add({ id, col: 2, label: `⋈ ${tableOf(j.left)} ↔ ${tableOf(j.right)}`, sub: hit ? (hit.rule === "V05" ? "join làm nhân dòng" : "join chưa khai báo") : `join theo ${colOf(j.left)}`,
-      tone: hit ? "bad" : "cond", tip: j.sql });
+    add({ id, col: 2, label: `${tableOf(j.left)} ⋈ ${tableOf(j.right)}`, sub: hit ? (hit.rule === "V05" ? "join làm nhân dòng" : "join chưa khai báo") : `join theo ${colOf(j.left)}`,
+      tone: hit ? "bad" : "join", tip: j.sql });
     edges.push({ from: id, to: RESULT, kind: "control" });
   });
   ln.group_by.forEach((g, i) => {
     const id = `grp:${i}`;
     const bad = g.columns.some((c) => wrongTime.has(c));
-    add({ id, col: 2, label: `chia theo ${g.columns.map(colOf).join(", ")}`, sub: bad ? "sai cột thời gian" : "chiều chia", tone: bad ? "bad" : "cond", tip: g.sql });
+    add({ id, col: 2, label: `chia theo ${g.columns.map(colOf).join(", ")}`, sub: bad ? "sai cột thời gian" : "chiều chia", tone: bad ? "bad" : "group", tip: g.sql });
     g.columns.forEach((c) => {
       add({ id: `mart:${c}`, col: 1, label: colOf(c), sub: `${tableOf(c)} · cột chia`, tone: "mart", tip: c });
       edges.push({ from: `mart:${c}`, to: id, kind: "control" });

@@ -52,11 +52,11 @@ export function SqlView({ sql, previous, highlight, maxHeight = 360, className }
   };
 
   return (
-    <div className={cx("group relative rounded-md border border-line bg-sunk", className)}>
-      <button onClick={copy} className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded border border-line bg-surface px-1.5 py-0.5 text-[11.5px] text-muted opacity-0 transition-opacity hover:text-ink group-hover:opacity-100 focus:opacity-100">
+    <div className={cx("group relative rounded-md border border-line bg-paper", className)}>
+      <button onClick={copy} className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded border border-line-strong bg-surface px-1.5 py-0.5 text-[11.5px] text-muted opacity-0 transition-opacity hover:text-ink group-hover:opacity-100 focus:opacity-100">
         {copied ? <><Check size={12} /> Đã chép</> : <><Copy size={12} /> Chép SQL</>}
       </button>
-      <pre className="sql scroll-thin overflow-auto py-2 font-mono text-[12.5px] leading-[1.6]" style={{ maxHeight }}>
+      <pre className="sql scroll-thin overflow-auto py-3 font-mono text-[12.5px] leading-[1.7] text-ink-2" style={{ maxHeight }}>
         {lines.map((l, idx) => {
           const hit = marks.some((mk) => l.line.toLowerCase().includes(mk));
           return (

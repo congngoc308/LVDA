@@ -1,7 +1,7 @@
-import { ArrowRight, CornerDownRight, Database, Filter, GitMerge, Sigma, Wrench } from "lucide-react";
+import { ArrowRight, CornerDownRight, Database, Filter, Sigma } from "lucide-react";
 import { describeFilter } from "../format";
 import type { Attempt, FilterFp, Finding, Run } from "../types";
-import { cx, RuleChip, shortCol, VERDICT_META, VerdictStamp } from "./ui";
+import { cx, shortCol, VERDICT_META } from "./ui";
 
 function Col({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -70,56 +70,57 @@ export function LineageChain({ run }: { run: Run }) {
 }
 
 const SEV_LABEL: Record<string, string> = { high: "Cao", medium: "Trung bình", low: "Thấp", info: "Ghi chú" };
+const SEV_TONE: Record<string, string> = { high: "text-bad", medium: "text-warn", low: "text-muted", info: "text-muted" };
 
-export function FindingsList({ findings, compact = false }: { findings: Finding[]; compact?: boolean }) {
-  const real = findings.filter((f) => f.severity !== "info");
-  const notes = findings.filter((f) => f.severity === "info");
-  if (!findings.length) return <p className="text-[13px] text-good">Không có phát hiện nào. Câu SQL khớp định nghĩa và các luật chung.</p>;
+/** Một dòng phiếu kiểm: loại · mã luật · nội dung. */
+function FindingRow({ kind, tone, code, children }: { kind: string; tone: string; code: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-2">
-      {real.map((f, i) => (
-        <div key={i} className={cx("rounded-md border px-3 py-2", f.severity === "high" ? "border-bad/25 bg-bad-soft/40" : f.severity === "medium" ? "border-warn/30 bg-warn-soft/40" : "border-line")}>
-          <div className="flex flex-wrap items-center gap-2">
-            <RuleChip rule={f.rule} severity={f.severity} />
-            <span className="font-medium">{f.title}</span>
-            <span className="text-[12px] text-muted">· mức {SEV_LABEL[f.severity]}</span>
-          </div>
-          <p className="mt-1 text-[13px] text-ink-2">{f.message_vi}</p>
-          {!compact && f.evidence && <code className="mt-1.5 block w-fit max-w-full truncate rounded bg-surface px-1.5 py-0.5 font-mono text-[11.5px] text-ink-2 ring-1 ring-line">{f.evidence}</code>}
-        </div>
-      ))}
-      {notes.map((f, i) => (
-        <div key={`n${i}`} className="flex items-start gap-2 text-[13px] text-ink-2">
-          <RuleChip rule={f.rule} severity="info" /><span>{f.message_vi}</span>
-        </div>
-      ))}
+    <div className="grid grid-cols-[72px_48px_minmax(0,1fr)] items-baseline gap-3 border-b border-line-soft py-2.5 text-[13px] last:border-b-0">
+      <span className={cx("text-[12px]", tone)}>{kind}</span>
+      <span className="font-mono text-[12px] text-muted">{code}</span>
+      <div className="leading-normal text-ink-2">{children}</div>
     </div>
   );
 }
 
-const SOURCE_LABEL: Record<string, string> = { llm: "LLM viết", fix: "Tự sửa", verified: "Truy vấn mẫu", user: "Bạn nhập" };
-
-/** Dòng thời gian các lần thử: mỗi lần là một bước có phán quyết và các luật vi phạm. */
-export function AttemptTimeline({ attempts, active, onSelect }: { attempts: Attempt[]; active: number; onSelect: (n: number) => void }) {
+export function FindingsList({ findings, compact = false, fixes = [], notes: extra = [] }: { findings: Finding[]; compact?: boolean; fixes?: { rule: string; text: string }[]; notes?: string[] }) {
+  const real = findings.filter((f) => f.severity !== "info");
+  const notes = findings.filter((f) => f.severity === "info");
+  if (!findings.length && !fixes.length && !extra.length) return <p className="py-2 text-[13px] text-good">Không có phát hiện nào. Câu SQL khớp định nghĩa và các luật chung.</p>;
   return (
-    <ol className="flex flex-wrap items-stretch gap-2" aria-label="Các lần thử">
+    <div className="flex flex-col">
+      {real.map((f, i) => (
+        <FindingRow key={i} kind={SEV_LABEL[f.severity]} tone={SEV_TONE[f.severity]} code={f.rule}>
+          <span className="text-ink">{f.title}.</span> {f.message_vi}
+          {!compact && f.evidence && <code className="mt-1.5 block w-fit max-w-full truncate rounded bg-paper px-1.5 py-0.5 font-mono text-[11.5px] text-muted">{f.evidence}</code>}
+        </FindingRow>
+      ))}
+      {extra.map((n, i) => <FindingRow key={`x${i}`} kind="Lưu ý" tone="text-warn" code="—">{n}</FindingRow>)}
+      {notes.map((f, i) => <FindingRow key={`n${i}`} kind="Ghi chú" tone="text-muted" code={f.rule || "—"}>{f.message_vi}</FindingRow>)}
+      {fixes.map((f, i) => <FindingRow key={`f${i}`} kind="Đã sửa" tone="text-good" code={f.rule}>{f.text}</FindingRow>)}
+    </div>
+  );
+}
+
+const SOURCE_LABEL: Record<string, string> = { llm: "LLM viết", fix: "Tự sửa", verified: "Truy vấn mẫu", user: "Bạn nhập", metric: "SQL chuẩn" };
+const DOT: Record<string, string> = { green: "bg-good", yellow: "bg-warn", red: "bg-bad", blocked: "bg-bad" };
+
+/** Các lần thử trên một dòng: Lần 0 · LLM viết · Đỏ V05 → Lần 1 · Tự sửa · Xanh. Bấm để xem lần đó. */
+export function AttemptChips({ attempts, active, onSelect }: { attempts: Attempt[]; active: number; onSelect: (n: number) => void }) {
+  return (
+    <ol className="flex flex-wrap items-center gap-2.5" aria-label="Các lần thử">
       {attempts.map((a, i) => {
         const meta = VERDICT_META[a.verdict] ?? VERDICT_META.unchecked;
         const rules = a.verification.findings.filter((f) => f.severity !== "info");
         return (
-          <li key={a.no} className="flex items-center gap-2">
-            {i > 0 && <span className="flex items-center gap-1 text-[11.5px] text-muted"><Wrench size={12} /> sửa</span>}
+          <li key={a.no} className="flex items-center gap-2.5">
+            {i > 0 && <ArrowRight size={14} className="text-dim" aria-hidden />}
             <button onClick={() => onSelect(i)} aria-pressed={active === i}
-              className={cx("flex min-w-[148px] flex-col items-start gap-1 rounded-md border px-2.5 py-1.5 text-left transition-colors",
-                active === i ? "border-ink/60 bg-surface shadow-sm" : "border-line bg-sunk/60 hover:bg-surface")}>
-              <span className="flex w-full items-center justify-between gap-2 text-[11.5px] text-muted">
-                <span>Lần {a.no} · {SOURCE_LABEL[a.source] ?? a.source}</span>
-              </span>
-              <span className="flex flex-wrap items-center gap-1">
-                <VerdictStamp verdict={a.verdict} size="sm" />
-                {rules.slice(0, 3).map((f) => <RuleChip key={f.rule} rule={f.rule} severity={f.severity} />)}
-                {rules.length === 0 && <span className={cx("text-[11.5px]", meta.cls.split(" ")[0])}>không lỗi</span>}
-              </span>
+              className={cx("flex items-center gap-1.5 whitespace-nowrap rounded-[5px] border px-2 py-[3px] text-[12px] transition-colors",
+                active === i ? "border-[#44485f] text-ink" : "border-raised text-faint hover:text-ink-2")}>
+              <span className={cx("size-1.5 rounded-full", DOT[a.verdict] ?? "bg-line-strong")} />
+              Lần {a.no} · {SOURCE_LABEL[a.source] ?? a.source} · {meta.label}
+              {rules.slice(0, 3).map((f) => <span key={f.rule} className={cx("font-mono", f.severity === "high" ? "text-bad" : f.severity === "medium" ? "text-warn" : "text-muted")}>{f.rule}</span>)}
             </button>
           </li>
         );
@@ -129,15 +130,8 @@ export function AttemptTimeline({ attempts, active, onSelect }: { attempts: Atte
 }
 
 export function AttemptDetail({ attempt, previous }: { attempt: Attempt; previous?: Attempt }) {
-  return (
-    <div className="flex flex-col gap-3">
-      {(attempt.notes.length > 0 || (previous?.fix_notes.length ?? 0) > 0) && (
-        <ul className="flex flex-col gap-1 text-[13px]">
-          {attempt.notes.map((n, i) => <li key={i} className="text-warn">• {n}</li>)}
-          {previous?.fix_notes.map((n, i) => <li key={`f${i}`} className="text-ink-2"><GitMerge size={12} className="mr-1 inline text-good" />{n}</li>)}
-        </ul>
-      )}
-      <FindingsList findings={attempt.verification.findings} />
-    </div>
-  );
+  // lần trước bị luật nào thì ghi "Đã sửa" kèm mã luật đó
+  const prevRules = previous?.verification.findings.filter((f) => f.severity !== "info").map((f) => f.rule) ?? [];
+  const fixes = (previous?.fix_notes ?? []).map((text, i) => ({ rule: prevRules[i] ?? prevRules[0] ?? "—", text }));
+  return <FindingsList findings={attempt.verification.findings} fixes={fixes} notes={attempt.notes} />;
 }

@@ -46,7 +46,7 @@ function Rail({ step, reached, summaries, locked, onEdit }: {
           <li key={s} className="relative flex gap-3 pb-6 last:pb-0">
             {s < 4 && <span className={cx("absolute left-[13px] top-7 h-[calc(100%-24px)] w-px", done ? "bg-good" : "bg-line")} aria-hidden />}
             <span className={cx("num z-[1] grid size-[27px] shrink-0 place-items-center rounded-full text-[12px] font-semibold",
-              done ? "bg-good text-paper" : active ? "bg-navy text-white" : "border border-line-strong bg-surface text-muted")}>
+              done ? "bg-good text-paper" : active ? "bg-accent text-on-accent" : "border border-line-strong bg-surface text-muted")}>
               {done ? <CheckCircle2 size={16} /> : s}
             </span>
             <div className="min-w-0 flex-1 pt-0.5">
@@ -174,7 +174,7 @@ export default function ConnectPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b border-line bg-[rgba(10,14,21,0.6)] backdrop-blur-md px-6 py-3 text-[13px]">
+      <div className="flex items-center gap-2 border-b border-line bg-paper px-6 py-3 text-[13px]">
         <Link to="/sources" className="text-muted hover:text-ink">Nguồn dữ liệu</Link>
         <span className="text-faint">/</span>
         <span className="font-medium">Kết nối database</span>

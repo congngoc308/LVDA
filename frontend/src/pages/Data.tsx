@@ -128,7 +128,7 @@ function ListView({ dbId, home, domain, q }: { dbId: number; home: Home; domain:
         <div className="flex flex-wrap items-center gap-1">
           {[null, ...Array.from({ length: home.max_layer + 1 }, (_, i) => i)].map((l) => (
             <button key={String(l)} onClick={() => setLayer(l)} aria-pressed={layer === l}
-              className={cx("rounded-full px-2.5 py-0.5 text-[12px]", layer === l ? "bg-navy text-white" : "bg-sunk text-ink-2 hover:bg-line")}>
+              className={cx("rounded-full px-2.5 py-0.5 text-[12px]", layer === l ? "bg-accent text-on-accent" : "bg-sunk text-ink-2 hover:bg-line")}>
               {l === null ? "Mọi lớp" : layerLabel(l, home.max_layer)}
             </button>
           ))}
@@ -260,7 +260,7 @@ export default function DataPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-[rgba(10,14,21,0.6)] backdrop-blur-md px-6 py-3">
+      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-paper px-6 py-3">
         <button onClick={() => nav("/data")} className="text-[18px] font-semibold tracking-tight hover:text-accent">Dữ liệu</button>
         {focus && <span className="truncate font-mono text-[13px] text-muted">/ {focus}</span>}
         <SearchBox />

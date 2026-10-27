@@ -78,12 +78,12 @@ export default function SourcesPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-[rgba(10,14,21,0.6)] backdrop-blur-md px-6 py-4">
+      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-paper px-6 py-4">
         <h1 className="text-[20px] font-semibold tracking-tight">Nguồn dữ liệu</h1>
         <span className="num rounded-full bg-sunk px-2 text-[12px] text-muted">{list?.counts.all ?? "…"}</span>
         <Button variant="primary" className="ml-auto" onClick={() => nav("/sources/connect")}><Plus size={15} /> Kết nối database</Button>
       </div>
-      <div className="flex flex-wrap items-center gap-2 border-b border-line bg-[rgba(10,14,21,0.6)] backdrop-blur-md px-6 py-2.5">
+      <div className="flex flex-wrap items-center gap-2 border-b border-line bg-paper px-6 py-2.5">
         <label className="relative w-full max-w-[320px]">
           <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-faint" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm theo tên, host, database…" aria-label="Tìm nguồn"
