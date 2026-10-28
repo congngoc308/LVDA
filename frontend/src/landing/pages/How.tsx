@@ -1,14 +1,14 @@
 import { CtaBand, PageHero, Section, SectionHead, usePageTitle, VerdictChip } from "../ui";
 
 const STEPS = [
-  ["Hiểu câu hỏi", "Khớp chỉ số theo tên và từ đồng nghĩa (không cần dấu), khoảng thời gian, chiều chia, top N. Từ khớp nhiều chỉ số thì đưa lựa chọn khác; dữ liệu không có thì từ chối."],
-  ["Tìm", "BM25 trên bảng, cột, mô tả, chỉ số và truy vấn mẫu đã duyệt, để đưa đúng ngữ cảnh vào prompt."],
-  ["Viết SQL", "Model trả về {sql, metric_id, assumptions}, thử lại một lần nếu sai schema. Nội dung catalog nằm trong thẻ <data> và không bao giờ được coi là chỉ dẫn."],
-  ["Kiểm", "Chặn mọi thứ ngoài một câu SELECT/WITH, rồi phân tích SQL thành dấu vân tay lineage, áp 12 luật và cấu hình luật của database, ra kết luận."],
-  ["Sửa", "Chỉ khi Đỏ: các phát hiện dạng máy đọc được gửi lại model, tối đa hai vòng."],
-  ["Chạy", "Chạy bằng role lvda_reader, giới hạn 10 giây, giao dịch chỉ đọc. Vẫn Đỏ sau hai vòng thì không chạy, giữ lại và đưa vào hàng đợi."],
-  ["Đối chiếu", "Chạy SQL chuẩn của chỉ số với cùng bộ lọc và chiều chia. Lệch quá 0,5% thì cảnh báo và tạo việc cần duyệt."],
-  ["Trả lời", "Viết câu trả lời tiếng Việt từ các dòng kết quả. Số nào không có trong kết quả thì câu trả lời bị từ chối."],
+  ["Hiểu câu hỏi", "Nhận ra chỉ số, khoảng thời gian, chiều chia và top N. Câu mơ hồ được hỏi lại bằng vài lựa chọn; câu không có dữ liệu bị từ chối."],
+  ["Tìm ngữ cảnh", "Dùng BM25 tìm trong catalog và các truy vấn mẫu đã duyệt để đưa vào prompt."],
+  ["Viết SQL", "Model trả về {sql, metric_id, assumptions}. Catalog được bọc trong thẻ <data> và chỉ được đọc như dữ liệu."],
+  ["Kiểm", "Chỉ nhận một câu SELECT hoặc WITH. sqlglot tách dấu vân tay lineage, áp 12 luật rồi cho kết luận."],
+  ["Sửa", "Nếu kết luận là Đỏ, các phát hiện được gửi lại để model viết lại SQL, tối đa hai vòng."],
+  ["Chạy", "SQL chạy bằng role chỉ đọc lvda_reader, tối đa 10 giây. Câu vẫn Đỏ sau hai vòng sửa thì bị giữ lại."],
+  ["Đối chiếu", "Kết quả được so với SQL chuẩn của chỉ số. Lệch quá 0,5% thì câu trả lời có cảnh báo và chờ duyệt."],
+  ["Trả lời", "Model viết câu trả lời tiếng Việt từ bảng kết quả. Câu nào nêu số không có trong kết quả thì bị loại."],
 ];
 
 const PRINT = [
@@ -33,10 +33,10 @@ export default function HowPage() {
   usePageTitle("Cách hoạt động");
   return (
     <>
-      <PageHero eyebrow="Cách hoạt động" title="Tám bước, và vì sao con số sai không ra được ngoài"
-        lead="Bộ kiểm không hỏi LLM câu SQL có đúng không. Nó tách câu SQL thành từng phần có thể so sánh, đặt cạnh định nghĩa đã chứng nhận, và chỉ ra phần nào lệch." />
+      <PageHero eyebrow="Cách hoạt động" title="Tám bước LVDA đi qua trước khi trả về một con số"
+        lead="Bước kiểm không gọi LLM. Bộ kiểm tách câu SQL thành từng phần và so với định nghĩa chỉ số đã chứng nhận trong YAML." />
       <Section sunk>
-        <SectionHead eyebrow="Đời sống một câu hỏi" title="Từ câu hỏi tới câu trả lời" />
+        <SectionHead eyebrow="Quy trình" title="Các bước từ câu hỏi tới câu trả lời" />
         <ol className="relative space-y-0 border-l border-line-strong pl-8 sm:ml-4">
           {STEPS.map(([t, b], i) => (
             <li key={t} className="relative pb-8 last:pb-0">
@@ -49,9 +49,9 @@ export default function HowPage() {
       </Section>
       <Section>
         <div className="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-          <SectionHead className="!mb-0" eyebrow="Dấu vân tay lineage" title="Câu SQL được so theo từng phần"
-            lead="Bộ kiểm dùng sqlglot để định danh mọi cột, đi qua từng phạm vi kể cả CTE, rồi ghi lại sáu thứ dưới đây. Khi chứng nhận một chỉ số, dấu vân tay của SQL chuẩn được lưu lại để biết khi nào view thay đổi." />
-          <div className="overflow-hidden rounded-xl border border-line bg-surface">
+          <SectionHead className="!mb-0" eyebrow="Dấu vân tay lineage" title="Bộ kiểm so từng phần của câu SQL với định nghĩa"
+            lead="sqlglot tìm bảng gốc của từng cột, kể cả cột trong CTE, rồi ghi lại sáu phần dưới đây. Ví dụ là chỉ số gmv v1." />
+          <div className="overflow-hidden rounded-2xl border border-line bg-panel">
             <div className="border-b border-line px-5 py-3 text-[13px] text-faint">Doanh thu gộp · gmv v1</div>
             <dl className="divide-y divide-line">
               {PRINT.map(([k, v]) => (
@@ -65,9 +65,9 @@ export default function HowPage() {
       </Section>
       <Section sunk>
         <SectionHead eyebrow="Luật kiểm" title="12 luật và 6 ghi chú"
-          lead="Luật vi phạm làm câu SQL Đỏ hoặc Vàng tùy mức độ; ghi chú không đổi kết luận nhưng hiện trên phiếu. Engineer bật tắt và đổi mức độ từng luật cho mỗi database." />
+          lead="Vi phạm một luật làm SQL thành Đỏ hoặc Vàng tùy mức. Ghi chú chỉ hiện trên phiếu kiểm. Engineer bật, tắt và đổi mức từng luật cho mỗi database." />
         <div className="grid gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-          <div className="overflow-hidden rounded-xl border border-line bg-surface">
+          <div className="overflow-hidden rounded-2xl border border-line bg-panel">
             <table className="w-full text-[14px]">
               <thead className="border-b border-line text-left text-[12.5px] text-faint"><tr><th className="px-5 py-3 font-medium">Luật</th><th className="px-5 py-3 font-medium">Tên</th><th className="px-5 py-3 font-medium">Mức mặc định</th></tr></thead>
               <tbody className="divide-y divide-line">
@@ -79,19 +79,19 @@ export default function HowPage() {
             </table>
           </div>
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-line bg-surface">
+            <div className="overflow-hidden rounded-2xl border border-line bg-panel">
               <div className="border-b border-line px-5 py-3 text-[13px] text-faint">Ghi chú</div>
               <ul className="divide-y divide-line">
                 {NOTES.map(([id, n]) => <li key={id} className="flex gap-4 px-5 py-2.5 text-[14px]"><span className="font-mono text-[13px] text-accent">{id}</span>{n}</li>)}
               </ul>
             </div>
-            <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="rounded-2xl border border-line bg-panel p-5">
               <div className="text-[13px] text-faint">Kết luận</div>
               <ul className="mt-3 space-y-3 text-[14px] leading-[1.55] text-ink-2">
-                <li className="flex gap-3"><VerdictChip v="green" /><span>Khớp định nghĩa, được chạy và công bố.</span></li>
-                <li className="flex gap-3"><VerdictChip v="yellow" /><span>Cần xem lại: lệch nhẹ, hoặc không có định nghĩa để so.</span></li>
-                <li className="flex gap-3"><VerdictChip v="red" /><span>Sai cấu trúc: không chạy, đưa đi sửa.</span></li>
-                <li className="flex gap-3"><VerdictChip v="held" /><span>Vẫn Đỏ sau hai vòng: không công bố số.</span></li>
+                <li className="flex gap-3"><VerdictChip v="green" /><span>Khớp định nghĩa, con số được trả về.</span></li>
+                <li className="flex gap-3"><VerdictChip v="yellow" /><span>Lệch nhẹ hoặc chưa có định nghĩa để so.</span></li>
+                <li className="flex gap-3"><VerdictChip v="red" /><span>Sai so với định nghĩa, SQL chưa chạy mà được đưa đi sửa.</span></li>
+                <li className="flex gap-3"><VerdictChip v="held" /><span>Vẫn Đỏ sau hai vòng sửa, con số bị giữ lại chờ duyệt.</span></li>
               </ul>
             </div>
           </div>

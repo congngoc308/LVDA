@@ -5,7 +5,7 @@ export default function CatalogPage() {
   return (
     <>
       <PageHero eyebrow="Dữ liệu & lineage" title="Biết mỗi con số đi qua những cột nào"
-        lead="Catalog đọc định nghĩa view ngay trong database, dựng lineage tới từng cột và gắn vào đó những gì agent đã làm: câu hỏi nào dùng cột này, bao nhiêu câu Xanh, lỗi nào đã bị chặn."
+        lead="LVDA parse định nghĩa view để dựng lineage tới từng cột. Mỗi cột có tỉ lệ câu Xanh và số SQL sai đã chặn."
         actions={<Cta to={L("bat-dau")}>Chạy thử trên máy</Cta>}>
         <Frame><Shot name="column" eager alt="Canvas lineage của mart.fct_orders với cột gmv được chọn; khung bên phải: độ tin cậy 98%, đã chặn 18 câu SQL sai, mô tả cột." /></Frame>
       </PageHero>
@@ -13,32 +13,32 @@ export default function CatalogPage() {
         <div className="mx-auto grid max-w-[1200px] gap-8 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
           <Stat value="500" label="bảng trong kho mẫu doanh nghiệp" note="10 miền nghiệp vụ, 4.081 cột" />
           <Stat value="300/300" label="view parse được lineage" />
-          <Stat value="1,4 s" label="crawl và dựng lineage cả kho" />
-          <Stat value="~100 ms" label="tìm trên mọi bảng và cột" />
+          <Stat value="1,4 s" label="để crawl và dựng lineage cho cả kho" />
+          <Stat value="~100 ms" label="cho một lần tìm trên toàn bộ bảng và cột" />
         </div>
       </section>
       <Section>
-        <Feature eyebrow="Trang đầu" title="Không bắt bạn cuộn qua 500 bảng"
-          body="Trang đầu chỉ đưa những bảng đáng xem: vừa mở gần đây, agent hay dùng, đứng sau chỉ số đã chứng nhận, và các miền nghiệp vụ kèm số bảng PII, mô tả chờ duyệt và bảng ngừng dùng."
-          points={["Tìm theo tên, mô tả, gõ không dấu cũng được", "Kết quả xếp theo mức agent đã dùng", "Mỗi trang kết quả chỉ vài KB"]}
+        <Feature eyebrow="Trang đầu" title="Trang đầu chỉ hiện những bảng hay được dùng"
+          body="Bạn thấy bảng vừa xem, bảng agent dùng nhiều nhất và bảng đứng sau chỉ số đã chứng nhận."
+          points={["Tìm theo tên hoặc mô tả, gõ không dấu cũng được", "Kết quả xếp theo mức agent đã dùng"]}
           visual={<Frame><Shot name="catalog" alt="Trang Dữ liệu: 26 bảng, 151 cột, 5 miền nghiệp vụ, 179 lượt agent dùng; danh sách bảng agent hay dùng và bảng trong chỉ số đã chứng nhận." /></Frame>} />
       </Section>
       <Section sunk>
-        <Feature flip eyebrow="Canvas lineage" title="Bấm một cột, thấy cả đường đi của nó"
-          body="Mỗi bảng là một nút có các cột bên trong, xếp theo làn nguồn, trung gian, mart, chỉ số. Bấm một cột là đường đi từ raw tới chỉ số sáng lên. Mỗi bảng hiện tối đa 14 bảng lân cận, phần còn lại gói vào 'xem tất cả'."
-          points={[<><b className="font-semibold text-ink">Độ tin cậy</b>: câu hỏi đã dùng cột, tỉ lệ Xanh, số câu bị giữ, lỗi bộ kiểm đã chặn, chỉ số đã chứng nhận kèm người và ngày</>,
-            <><b className="font-semibold text-ink">Tác động</b>: bảng, cột, chỉ số, truy vấn mẫu và câu hỏi cũ sẽ bị ảnh hưởng nếu cột này đổi</>]}
+        <Feature flip eyebrow="Canvas lineage" title="Canvas tô sáng đường đi của cột bạn chọn"
+          body="Chọn một cột, đường từ bảng raw qua staging, mart tới chỉ số sáng lên."
+          points={[<><b className="font-semibold text-ink">Độ tin cậy</b>: tỉ lệ câu Xanh và số lỗi bộ kiểm đã bắt</>,
+            <><b className="font-semibold text-ink">Tác động</b>: bảng, chỉ số và truy vấn mẫu bị ảnh hưởng khi cột đổi</>]}
           visual={<Frame><Shot name="column" alt="Cột gmv được chọn trên canvas lineage, đường từ raw.order_items.price và freight_value sáng lên." /></Frame>} />
       </Section>
       <Section>
         <div className="grid gap-8 md:grid-cols-2">
-          <div className="rounded-xl border border-line bg-surface p-7">
-            <div className="text-[19px] font-semibold">AI viết nháp, người duyệt</div>
-            <p className="mt-3 text-[15px] leading-[1.65] text-muted">Bảng và cột chưa có mô tả được AI viết nháp. Data engineer sửa và duyệt ngay trong khung chi tiết; mô tả chờ duyệt được đếm theo từng miền.</p>
+          <div className="rounded-2xl border border-line bg-panel p-7">
+            <div className="text-[19px] font-semibold">Mô tả cột do AI viết nháp</div>
+            <p className="mt-3 text-[15px] leading-[1.65] text-muted">Data engineer sửa và duyệt bản nháp trước khi dùng.</p>
           </div>
-          <div className="rounded-xl border border-line bg-surface p-7">
-            <div className="text-[19px] font-semibold">Nạp lại warehouse, biết chỉ số nào bị ảnh hưởng</div>
-            <p className="mt-3 text-[15px] leading-[1.65] text-muted">Khi định nghĩa view thay đổi, nút "Nạp lại warehouse" crawl lại và đánh dấu những chỉ số có lineage đổi là cần chứng nhận lại.</p>
+          <div className="rounded-2xl border border-line bg-panel p-7">
+            <div className="text-[19px] font-semibold">Nạp lại warehouse</div>
+            <p className="mt-3 text-[15px] leading-[1.65] text-muted">LVDA crawl lại các view. Chỉ số có lineage thay đổi bị đánh dấu cần chứng nhận lại.</p>
           </div>
         </div>
       </Section>

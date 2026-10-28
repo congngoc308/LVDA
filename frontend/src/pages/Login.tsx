@@ -1,6 +1,6 @@
 ﻿import { AlertCircle, ArrowLeft, ArrowRight, Check, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { LogoMark, ThemeToggle } from "../components/Shell";
 import { cx } from "../components/ui";
 import { useSession } from "../session";
@@ -71,10 +71,10 @@ function SubmitButton({ busy, children }: { busy: boolean; children: ReactNode }
 
 function Brand() {
   return (
-    <div className="mb-6 flex items-center gap-2">
+    <Link to="/gioi-thieu" className="mb-6 flex w-fit items-center gap-2 rounded-md hover:opacity-80" aria-label="LVDA, về trang giới thiệu">
       <LogoMark size={24} />
       <span className="text-[14px] font-bold tracking-tight text-ink">LVDA</span>
-    </div>
+    </Link>
   );
 }
 

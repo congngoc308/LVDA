@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { cx } from "../../components/ui";
 import { Code, CtaBand, Frame, L, Cta, PageHero, Points, Section, Shot, usePageTitle, type ShotName } from "../ui";
 
@@ -7,23 +8,23 @@ type Role = { id: string; label: string; pain: string; title: string; points: st
 const ROLES: Role[] = [
   {
     id: "engineer", label: "Data engineer",
-    pain: "Mỗi lần ai đó hỏi 'số này lấy từ đâu', bạn phải mở SQL ra đọc lại. Định nghĩa doanh thu nằm rải rác trong mười báo cáo.",
-    title: "Định nghĩa một lần, kiểm mọi nơi",
-    points: ["Viết chỉ số bằng YAML, chứng nhận và có phiên bản", "Duyệt câu trả lời Vàng, Đỏ trong một hàng đợi; câu duyệt thành truy vấn mẫu", "Thấy trước chỉ số, câu hỏi nào bị ảnh hưởng khi một cột đổi", "Bật tắt và đổi mức độ từng luật cho mỗi database"],
+    pain: "Định nghĩa chỉ số nằm rải rác trong SQL của từng báo cáo, muốn biết số tính từ đâu phải đọc lại code.",
+    title: "Chỉ số định nghĩa trong YAML, mọi câu SQL được kiểm theo đó",
+    points: ["Chỉ số viết bằng YAML và có phiên bản", "Câu Vàng và Đỏ được gom vào một hàng chờ duyệt", "Lineage cột chỉ ra chỉ số bị ảnh hưởng khi cột đổi"],
     shot: "metric", alt: "Chi tiết chỉ số Doanh thu gộp với lineage, định nghĩa, SQL chuẩn và dấu vân tay.", more: ["chi-so", "Chỉ số đã chứng nhận"],
   },
   {
     id: "analyst", label: "Người phân tích, quản lý",
-    pain: "Bạn cần một con số trước cuộc họp, nhưng không chắc câu trả lời của chatbot có dùng đúng định nghĩa mà phòng tài chính dùng không.",
-    title: "Hỏi bằng tiếng Việt, biết con số nào tin được",
-    points: ["Mỗi câu trả lời ghi rõ chỉ số, phiên bản và kết luận Xanh, Vàng, Đỏ", "Giả định được liệt kê, không giấu trong SQL", "Báo sai bằng một nút; câu đó vào hàng đợi duyệt", "Cột nhạy cảm tự che với người xem"],
+    pain: "Chatbot đưa ra con số cho cuộc họp nhưng không cho biết nó tính theo định nghĩa nào.",
+    title: "Hỏi bằng tiếng Việt, mỗi con số kèm kết luận kiểm",
+    points: ["Mỗi câu trả lời có kết luận Xanh, Vàng hoặc Đỏ", "Các giả định được ghi ngay trên thẻ trả lời", "Thấy số sai thì đánh dấu sai để gửi duyệt"],
     shot: "answer", alt: "Thẻ trả lời doanh thu theo loại thanh toán năm 2017 với kết luận Xanh.", more: ["hoi-va-kiem", "Hỏi & kiểm"],
   },
   {
     id: "ai", label: "Đội xây agent AI",
-    pain: "Agent của bạn viết SQL rất tự tin. Bạn không có cách nào rẻ và ổn định để biết khi nào nó sai, ngoài việc nhờ thêm một LLM khác chấm.",
-    title: "Một bộ kiểm xác định cho mọi agent",
-    points: ["Năm tool MCP dùng được từ Claude Code, Cursor", "Khoảng 12 ms mỗi lần kiểm, không tốn token", "Phát hiện dạng máy đọc được, đủ cụ thể để agent tự sửa", "CLI trả mã thoát 1 khi Đỏ, đặt được vào CI"],
+    pain: "SQL do agent viết vẫn chạy dù ra số sai, và thường chỉ có một LLM khác chấm lại.",
+    title: "Bộ kiểm tất định gọi được từ agent qua MCP hoặc CLI",
+    points: ["Năm tool MCP dùng được trong Claude Code và Cursor", "Mỗi lần kiểm mất khoảng 12 ms và không gọi LLM", "Lệnh lvda verify trả mã thoát 1 khi kết quả Đỏ, nên chạy được trong CI"],
     code: `# trong Claude Code
 > verify_sql(sql="SELECT AVG(p.payment_value) ...", metric_id="aov")
 
@@ -37,13 +38,17 @@ findings:
 
 export default function SolutionsPage() {
   usePageTitle("Giải pháp theo vai trò");
-  const [tab, setTab] = useState(ROLES[0].id);
+  // menu trên cùng link tới #engineer, #analyst, #ai để mở đúng vai trò
+  const { hash } = useLocation();
+  const fromHash = () => ROLES.find((x) => x.id === hash.slice(1))?.id;
+  const [tab, setTab] = useState(() => fromHash() ?? ROLES[0].id);
+  useEffect(() => { const h = fromHash(); if (h) setTab(h); }, [hash]);
   const r = ROLES.find((x) => x.id === tab)!;
   return (
     <>
-      <PageHero eyebrow="Giải pháp" title="Một lớp kiểm chứng, ba cách dùng"
-        lead="Người định nghĩa con số, người hỏi con số, và agent viết SQL đều dùng chung một kho chỉ số và một bộ kiểm." />
-      <Section sunk className="!pt-10">
+      <PageHero eyebrow="Giải pháp" title="Cách từng vai trò dùng LVDA"
+        lead="Người định nghĩa chỉ số, người hỏi số liệu và agent viết SQL đều đi qua cùng một bộ kiểm." />
+      <Section id={tab} sunk className="!pt-10">
         <div role="tablist" aria-label="Vai trò" className="mb-10 flex flex-wrap gap-2">
           {ROLES.map((x) => (
             <button key={x.id} role="tab" aria-selected={tab === x.id} onClick={() => setTab(x.id)}

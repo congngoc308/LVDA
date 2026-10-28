@@ -15,7 +15,7 @@ function InterpretMock() {
           <div className="flex flex-wrap items-center gap-2"><span className="w-24 text-faint">Thời gian</span><span className="rounded-md bg-raised px-2 py-0.5 text-ink-2">01/03/2018 – 31/03/2018</span></div>
           <div className="flex flex-wrap items-center gap-2"><span className="w-24 text-faint">Cũng có thể là</span><span className="rounded-md border border-line-strong px-2 py-0.5 text-ink-2">Doanh thu hàng hóa</span></div>
         </div>
-        <p className="mt-4 border-t border-line pt-4 text-[13px] text-faint">"doanh thu" khớp hai chỉ số đã chứng nhận, nên LVDA hỏi lại trước khi viết SQL.</p>
+        <p className="mt-4 border-t border-line pt-4 text-[13px] text-faint">"doanh thu" khớp với hai chỉ số nên LVDA hỏi lại bạn.</p>
       </div>
     </Frame>
   );
@@ -28,9 +28,9 @@ function YellowMock() {
         <div className="text-[15px] font-medium">Có bao nhiêu người bán ở bang SP có trên 10 đơn?</div>
         <div className="mt-4 flex flex-wrap items-center gap-2"><VerdictChip v="yellow">Đã kiểm · Vàng</VerdictChip><span className="rounded bg-warn-soft px-1.5 py-px font-mono text-[12px] text-warn">I03</span><span className="text-[13.5px] text-muted">Chưa có định nghĩa để so</span></div>
         <div className="mt-4 rounded-lg bg-sunk p-4 text-[14px] leading-[1.6] text-ink-2">
-          Không chỉ số đã chứng nhận nào diễn đạt được điều kiện "trên 10 đơn". Agent tự viết SQL; bộ kiểm chỉ áp các luật chung.
+          Không có chỉ số nào khớp với "trên 10 đơn", nên bộ kiểm chỉ áp các luật chung.
         </div>
-        <div className="mt-4 flex items-center gap-2 text-[13.5px] text-muted"><span className="size-1.5 rounded-full bg-warn" aria-hidden />Đã gửi vào hàng đợi duyệt của data engineer</div>
+        <div className="mt-4 flex items-center gap-2 text-[13.5px] text-muted"><span className="size-1.5 rounded-full bg-warn" aria-hidden />Đã gửi vào hàng đợi duyệt</div>
       </div>
     </Frame>
   );
@@ -40,29 +40,28 @@ export default function AskPage() {
   usePageTitle("Hỏi & kiểm");
   return (
     <>
-      <PageHero eyebrow="Hỏi & kiểm" title="Hỏi một con số. Nhận cả phiếu kiểm."
-        lead="Hỏi kho dữ liệu bằng tiếng Việt, có dấu hay không dấu đều được. Mỗi câu trả lời là một thẻ: con số, kết luận Xanh, Vàng hoặc Đỏ, giả định, đối chiếu với SQL chuẩn và lịch sử các lần sửa."
+      <PageHero eyebrow="Hỏi & kiểm" title="Mỗi câu trả lời kèm phiếu kiểm và lineage"
+        lead="Bạn hỏi bằng tiếng Việt, LVDA trả con số kèm kết luận Xanh, Vàng hoặc Đỏ."
         actions={<><Cta to={`${L()}#demo`}>Xem demo</Cta><Cta to={L("cach-hoat-dong")} variant="secondary">Bộ kiểm hoạt động thế nào</Cta></>}>
         <Frame className="mx-auto max-w-[980px]"><Shot name="answer" eager alt="Thẻ trả lời doanh thu theo loại thanh toán năm 2017 với kết luận Đã kiểm · Xanh, bảng bốn loại thanh toán, phiếu kiểm hai lần và đồ thị lineage." /></Frame>
       </PageHero>
       <Section sunk>
-        <Feature eyebrow="Trước khi gửi" title="Thấy LVDA hiểu câu hỏi thế nào"
-          body="Ô hỏi hiện chỉ số, khoảng thời gian, cách chia nhóm và top N mà LVDA đọc được. Khi một từ khớp nhiều chỉ số, nó đưa các lựa chọn khác để bạn đổi ngay."
-          points={["Khớp tên và từ đồng nghĩa của chỉ số, không cần gõ dấu", "Gõ SELECT hoặc WITH là ô chuyển sang chế độ kiểm SQL", "Câu hỏi về dữ liệu không có trong kho bị từ chối, không đoán bừa"]}
+        <Feature eyebrow="Trước khi gửi" title="Ô hỏi cho biết LVDA hiểu câu hỏi ra sao"
+          body="Trước khi gửi, bạn thấy chỉ số và khoảng thời gian LVDA nhận ra, cùng các chỉ số gần nghĩa để chọn lại."
+          points={["Nhận từ đồng nghĩa khai trong YAML, gõ không dấu cũng được", "Câu bắt đầu bằng SELECT hoặc WITH được kiểm như SQL", "Câu hỏi về dữ liệu không có trong kho bị từ chối"]}
           visual={<InterpretMock />} />
       </Section>
       <Section>
-        <Feature flip eyebrow="Phiếu kiểm" title="Bốn tab cho mỗi câu trả lời"
-          body="Phiếu kiểm ghi lại từng lần thử: model viết gì, luật nào bắt được, sửa ra sao. Bấm vào một lần để xem lineage của chính lần đó."
-          points={[<><b className="font-semibold text-ink">Lineage</b>: từ cột raw qua cột mart, phép tính, điều kiện tới kết quả; chỗ sai tô đỏ, bộ lọc thiếu kẻ đứt</>,
-            <><b className="font-semibold text-ink">Phát hiện</b>: luật bị vi phạm và ghi chú, kèm mức độ</>,
-            <><b className="font-semibold text-ink">SQL</b>: so khác biệt giữa các vòng sửa</>,
-            <><b className="font-semibold text-ink">Trace</b>: các bước, token, chi phí, thời gian và request_id</>]}
+        <Feature flip eyebrow="Phiếu kiểm" title="Phiếu kiểm có bốn tab"
+          body="Lineage, Phát hiện, SQL và Trace, xem riêng cho từng lần thử."
+          points={[<><b className="font-semibold text-ink">Lineage</b>: nút gây lỗi được tô đỏ</>,
+            <><b className="font-semibold text-ink">SQL</b>: so sánh SQL giữa các vòng sửa</>,
+            <><b className="font-semibold text-ink">Trace</b>: các bước, token, chi phí và request_id</>]}
           visual={<Frame glow={false}><Shot name="answer-red" alt="Lineage của lần 0: ô join fct_payments với fct_orders tô đỏ, ghi join làm nhân dòng, kết quả Không chạy." /></Frame>} />
       </Section>
       <Section sunk>
         <Feature eyebrow="Kiểm SQL của bạn" title="Dán câu SQL đã có để kiểm"
-          body="Không cần hỏi qua agent. Dán câu SQL đang dùng trong báo cáo, chọn chỉ số nó định tính, và nhận cùng phiếu kiểm như câu trả lời của agent."
+          body="Bạn dán SQL lấy từ báo cáo có sẵn và nhận phiếu kiểm giống SQL do agent viết."
           visual={<Code>{`SELECT o.customer_state,
        COUNT(DISTINCT o.customer_id) AS customers
 FROM mart.fct_orders AS o
@@ -72,8 +71,8 @@ GROUP BY o.customer_state
 -- chỉ số customer_count đếm theo customer_unique_id`}</Code>} />
       </Section>
       <Section>
-        <Feature flip eyebrow="Khi không có chỉ số" title="Câu hỏi lạ vẫn được trả lời, nhưng không quá Vàng"
-          body="Câu hỏi có điều kiện mà không định nghĩa nào mang theo được trả lời bằng SQL riêng. Kết luận tối đa là Vàng, và câu trả lời vào hàng đợi. Khi được duyệt, nó thành truy vấn mẫu để agent dùng lại."
+        <Feature flip eyebrow="Khi không có chỉ số" title="Câu hỏi chưa có chỉ số vẫn được trả lời, cao nhất là Vàng"
+          body="Agent tự viết SQL rồi gửi câu trả lời vào hàng đợi duyệt. Được duyệt thì câu đó thành truy vấn mẫu."
           visual={<YellowMock />} />
       </Section>
       <CtaBand />

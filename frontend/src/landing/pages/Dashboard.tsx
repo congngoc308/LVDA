@@ -1,21 +1,21 @@
 import { Cta, CtaBand, Feature, Frame, L, PageHero, Section, SectionHead, Shot, usePageTitle } from "../ui";
 
 const SYSTEM = [
-  ["Cần bạn xử lý", "Câu Vàng, Đỏ, lệch đối chiếu, câu bị báo sai; mở thẳng hàng đợi duyệt"],
-  ["Phán quyết 30 ngày", "Tỉ lệ Xanh, Vàng, Đỏ và bị giữ lại"],
-  ["Chỉ số vận hành", "Tỉ lệ Xanh, tự sửa thành công, người dùng báo sai, độ trễ"],
-  ["Xu hướng theo ngày", "Kết luận theo ngày cùng tỉ lệ Xanh"],
-  ["Từ câu hỏi tới con số", "Bao nhiêu câu nhận được, có SQL, qua kiểm, được công bố"],
-  ["Lỗi bản nháp đầu", "Model hay sai ở luật nào trước khi tự sửa"],
+  ["Cần bạn xử lý", "Câu Vàng, Đỏ, bị báo sai"],
+  ["Phán quyết 30 ngày", "Tỉ lệ Xanh, Vàng, Đỏ"],
+  ["Chỉ số vận hành", "Tự sửa, báo sai, độ trễ"],
+  ["Xu hướng theo ngày", "Tỉ lệ Xanh mỗi ngày"],
+  ["Từ câu hỏi tới con số", "Số câu ở từng bước: nhận, có SQL, qua kiểm, công bố"],
+  ["Lỗi bản nháp đầu", "Bản SQL đầu của model hay vi phạm luật nào"],
 ];
 
 const LINK_RULES = [
-  ["Quyền", "Xem và hỏi, hoặc Sửa. Không bao giờ cao hơn quyền của người tạo link."],
-  ["Hạn dùng", "1 đến 90 ngày, mặc định 7 ngày."],
-  ["Số lượt", "Không giới hạn, hoặc tối đa 1 đến 1.000 người."],
-  ["Thu hồi", "Link ngừng chạy và mọi người đã vào bằng link đó bị gỡ khỏi database."],
-  ["Chứng nhận", "Người vào qua link không chứng nhận được chỉ số, dù có quyền Sửa."],
-  ["Nhật ký", "Tạo, dùng, thu hồi link đều được ghi, lọc theo nhóm truy cập, chỉ số, duyệt, cấu hình, dữ liệu."],
+  ["Quyền", "Xem và hỏi hoặc Sửa, không cao hơn quyền của người tạo link."],
+  ["Hạn dùng", "1 đến 90 ngày, mặc định 7."],
+  ["Số lượt", "Không giới hạn hoặc từ 1 đến 1.000 người."],
+  ["Thu hồi", "Link hết hiệu lực và người đã vào qua link bị gỡ quyền."],
+  ["Chứng nhận", "Người vào qua link không chứng nhận được chỉ số."],
+  ["Nhật ký", "Việc tạo, dùng và thu hồi link đều được ghi vào nhật ký."],
 ];
 
 export default function DashboardPage() {
@@ -23,39 +23,38 @@ export default function DashboardPage() {
   return (
     <>
       <PageHero eyebrow="Dashboard & chia sẻ" title="Dashboard do agent dựng, con số vẫn được kiểm"
-        lead="Trả lời ba câu hỏi, agent đề xuất card từ chỉ số đã chứng nhận. Bạn kéo card vào dashboard, lưu, rồi mời cả nhóm bằng một link."
+        lead="Bạn trả lời ba câu hỏi, agent đề xuất card từ các chỉ số đã chứng nhận. Người khác vào xem qua link chia sẻ."
         actions={<><Cta to={`${L()}#demo`}>Xem demo</Cta><Cta to={L("bao-mat")} variant="secondary">Phân quyền & nhật ký</Cta></>}>
-        <Frame><Shot name="dashboard" eager alt="Dashboard Đánh giá: card Cần bạn xử lý với 4 câu chờ duyệt, card Phán quyết 30 ngày 87% Xanh, chỉ số vận hành 95,2% câu trả lời Xanh, tự sửa thành công 100%, độ trễ p50 206 ms." /></Frame>
+        <Frame><Shot name="dashboard" eager alt="Dashboard Đánh giá: 4 câu chờ duyệt, phán quyết 30 ngày 87% Xanh, 95,2% câu trả lời Xanh, tự sửa thành công 100%, độ trễ p50 206 ms." /></Frame>
       </PageHero>
       <Section sunk>
-        <Feature eyebrow="Tạo bằng AI" title="Ba câu hỏi, rồi xem agent làm từng bước"
-          body="Agent hỏi mục tiêu, người xem và tần suất, có thể thêm trọng tâm hoặc bỏ qua để dùng mặc định. Sau đó nó hiện từng bước: đọc yêu cầu, lập kế hoạch, kiểm từng card với kho chỉ số và bộ kiểm. Card bị loại có ghi lý do."
-          points={["Mỗi card ghi chỉ số, phiên bản, kết luận và thời gian chạy", "Kết quả vào vùng phụ, chưa lưu cho tới khi bấm Lưu", "Mỗi lần tạo có request_id để tra lại"]}
+        <Feature eyebrow="Tạo bằng AI" title="Agent hỏi ba câu rồi hiện từng bước khi tạo card"
+          body="Ba câu hỏi là mục tiêu, người xem và tần suất. Agent cho từng card qua bộ kiểm, card bị loại có ghi lý do."
+          points={["Mỗi card ghi chỉ số, phiên bản và kết luận kiểm", "Card mới nằm ở vùng phụ cho tới khi bạn bấm Lưu", "Mỗi lần tạo có request_id riêng"]}
           visual={<Frame className="mx-auto max-w-[520px]"><Shot name="agent" alt="Hộp Tạo card bằng AI: các bước Đọc yêu cầu, Lập kế hoạch card, Kiểm card Doanh thu gộp, Số đơn hàng, Giá trị đơn trung bình, Tỉ lệ giao trễ đều kiểm định Xanh, đưa 6 card vào vùng phụ trong 0,5 giây." /></Frame>} />
       </Section>
       <Section>
-        <Feature flip eyebrow="Sửa dashboard" title="Kéo thả, hoàn tác, chỉ lưu khi bạn muốn"
-          body="Card đi từ vùng phụ vào dashboard bằng kéo thả hoặc nút Thêm vào. Mũi tên, cỡ S M L XL, thu gọn, sửa, trả về vùng phụ và xóa đều làm được không cần kéo. Ctrl+Z để hoàn tác, Hủy để bỏ hết."
-          points={["Card không chứa SQL: chỉ lưu chỉ số, chiều chia, khoảng thời gian, kiểu biểu đồ, top N", "Mỗi lần hiển thị, server dựng lại SQL chuẩn và cho bộ kiểm chạy lại", "Chỉ số nháp, cũ hay ngừng dùng bị từ chối"]}
+        <Feature flip eyebrow="Sửa dashboard" title="Sắp xếp card bằng kéo thả, có hoàn tác"
+          body="Kéo card từ vùng phụ hoặc bấm Thêm vào. Card có các cỡ S, M, L, XL; bấm Ctrl+Z để hoàn tác."
+          points={["Card không chứa SQL, chỉ lưu chỉ số và chiều chia", "Bộ kiểm chạy lại mỗi lần card hiển thị", "Card dùng chỉ số nháp hoặc đã ngừng dùng bị từ chối"]}
           visual={<Frame><Shot name="tray" alt="Màn sửa dashboard với vùng phụ chứa 6 card do agent tạo." /></Frame>} />
       </Section>
       <Section sunk>
-        <SectionHead eyebrow="Card hệ thống" title="Sáu card luôn có, không ai xóa được"
-          lead="Card hệ thống chỉ di chuyển, đổi cỡ và thu gọn. Báo cáo chi tiết giữ các kết quả kỹ thuật: bộ kiểm theo từng luật, so với LLM chấm, so sánh theo model." />
+        <SectionHead eyebrow="Card hệ thống" title="Card hệ thống chỉ di chuyển, đổi cỡ hoặc gập lại được" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SYSTEM.map(([t, b]) => (
-            <div key={t} className="rounded-xl border border-line bg-surface p-5">
+            <div key={t} className="rounded-2xl border border-line bg-panel p-5">
               <div className="text-[16px] font-semibold">{t}</div>
               <p className="mt-1.5 text-[14px] leading-[1.55] text-muted">{b}</p>
             </div>
           ))}
         </div>
-        <p className="mt-6 text-[13.5px] text-faint">Dashboard dành cho thành viên có quyền Sửa. Người có quyền Xem và hỏi dùng Hỏi & kiểm và Dữ liệu.</p>
+        <p className="mt-6 text-[13.5px] text-faint">Dashboard dành cho quyền Sửa. Quyền Xem và hỏi dùng Hỏi & kiểm và Dữ liệu.</p>
       </Section>
       <Section id="chia-se">
-        <SectionHead eyebrow="Chia sẻ" title="Mời cả nhóm bằng một link, thu hồi bằng một nút"
-          lead="Quyền được cấp theo từng database. Link mời có hạn dùng và số lượt, nên gửi vào nhóm chat cũng không lo link sống mãi." />
-        <Frame glow={false}><Shot name="share" alt="Tab Link chia sẻ: chọn quyền Xem và hỏi hoặc Sửa, hết hạn sau 1, 7 hoặc 30 ngày, số lượt dùng, nút Tạo link; bảng link đang hiệu lực với nút Thu hồi." /></Frame>
+        <SectionHead eyebrow="Chia sẻ" title="Mời người khác vào database bằng link chia sẻ"
+          lead="Quyền được cấp theo từng database. Mỗi link có quyền, hạn dùng và số lượt riêng, và có thể thu hồi." />
+        <Frame glow={false}><Shot name="share" alt="Tab Link chia sẻ: chọn quyền Xem và hỏi hoặc Sửa, hết hạn sau 1, 7 hoặc 30 ngày, số lượt dùng; bảng link đang hiệu lực với nút Thu hồi." /></Frame>
         <dl className="mt-10 grid gap-x-10 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
           {LINK_RULES.map(([t, b]) => (
             <div key={t} className="border-t border-line pt-4">

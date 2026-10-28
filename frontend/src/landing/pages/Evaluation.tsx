@@ -37,7 +37,7 @@ const TOTAL = 116;
 function AgentChart({ model }: { model: string }) {
   const rows = AGENT.filter((r) => r.model === model);
   return (
-    <figure className="rounded-xl border border-line bg-surface p-5 sm:p-6">
+    <figure className="rounded-2xl border border-line bg-panel p-5 sm:p-6">
       <figcaption className="mb-5 text-[15px] font-semibold">{model}</figcaption>
       <div className="space-y-4">
         {rows.map((r) => (
@@ -62,23 +62,23 @@ export default function EvaluationPage() {
   usePageTitle("Đánh giá");
   return (
     <>
-      <PageHero eyebrow="Đánh giá" title="Con số nào cũng kèm cách đo và giới hạn của nó"
-        lead="Trang này thay cho logo khách hàng. Mọi số dưới đây đến từ một lệnh bạn tự chạy được, và trang nói rõ phần nào là đo thật, phần nào chạy trên model giả lập.">
+      <PageHero eyebrow="Đánh giá" title="Kết quả đánh giá bộ kiểm và agent, kèm cách đo"
+        lead="Mọi số trên trang được tạo lại bằng lệnh make eval. Mỗi phần ghi rõ chỗ nào đo thật, chỗ nào dùng model giả lập.">
         <div className="flex gap-3 rounded-xl border border-warn/40 bg-warn-soft/60 p-5 text-[14.5px] leading-[1.65] text-ink-2">
           <AlertTriangle size={18} className="mt-0.5 shrink-0 text-warn" aria-hidden />
-          <div><b className="font-semibold text-ink">Mọi thứ dính tới LLM là giả lập.</b> Bộ kiểm lineage là thật và chạy xác định. Model viết SQL, LLM chấm và lỗi trong nhật ký agent đến từ một model giả lập cố ý mắc lỗi, nên các bảng so sánh model kiểm tra quy trình, không đo chất lượng model.</div>
+          <div><b className="font-semibold text-ink">Các phần dùng LLM đều chạy bằng model giả lập.</b> Model viết SQL và LLM chấm được cài sẵn lỗi; bộ kiểm lineage chạy code thật. Vì vậy các bảng so sánh chỉ kiểm quy trình, chưa đo chất lượng model.</div>
         </div>
       </PageHero>
 
       <Section sunk>
-        <SectionHead eyebrow="1 · Bộ kiểm trên SQL có nhãn" title="Bắt mọi lỗi đã biết, không báo nhầm câu đúng"
-          lead="Tập lỗi gồm (a) 60 biến thể cấy lỗi từ SQL chuẩn của từng chỉ số và 8 lỗi chung, (b) bản nháp đầu tiên của agent cho mỗi câu hỏi benchmark. Tập đúng là SQL chuẩn và các biến thể chia nhóm đúng." />
+        <SectionHead eyebrow="1. Bộ kiểm trên SQL có nhãn" title="Bộ kiểm bắt cả 142 câu SQL sai và báo nhầm 0/60 câu đúng"
+          lead="SQL sai lấy từ hai nguồn: (a) biến thể cấy lỗi vào SQL chuẩn, gồm cả 8 ca lỗi chung, và (b) bản nháp đầu của agent. SQL đúng là truy vấn chuẩn của các chỉ số." />
         <div className="grid gap-8 sm:grid-cols-3">
-          <Stat value="142/142" label="SQL sai bị bắt" note="(a) 60/60 · (b) 82/82" />
+          <Stat value="142/142" label="SQL sai bị bắt" note="(a) 60/60, (b) 82/82" />
           <Stat value="0/60" label="báo nhầm trên SQL đúng" />
-          <Stat value="11,9 ms" label="p50 mỗi lần kiểm" note="p95 17,4 ms · không gọi LLM" />
+          <Stat value="11,9 ms" label="p50 mỗi lần kiểm" note="p95 17,4 ms, không gọi LLM" />
         </div>
-        <div className="mt-10 scroll-thin overflow-x-auto rounded-xl border border-line bg-surface">
+        <div className="mt-10 scroll-thin overflow-x-auto rounded-2xl border border-line bg-panel">
           <table className="w-full min-w-[560px] text-[14px]">
             <caption className="sr-only">Số ca bắt được theo từng luật</caption>
             <thead className="border-b border-line text-left text-[12.5px] text-faint"><tr><th className="px-5 py-3 font-medium">Luật</th><th className="px-5 py-3 font-medium">Lỗi</th><th className="px-5 py-3 text-right font-medium">Bắt được</th></tr></thead>
@@ -90,15 +90,14 @@ export default function EvaluationPage() {
           </table>
         </div>
         <p className="mt-5 max-w-[820px] text-[14px] leading-[1.65] text-muted">
-          <b className="font-semibold text-ink-2">Đọc 100% thế nào:</b> các luật bắt được những loại lỗi đã biết, vì cả hai nguồn lỗi đều do dự án tạo ra.
-          Con số chưa nói gì về những lỗi lạ của một model thật. Một lần chạy trước từng báo nhầm một ca; hóa ra ca "đúng" đó thật sự nhân dòng, nên lỗi nằm ở bộ sinh test và đã được sửa.
+          <b className="font-semibold text-ink-2">Cách đọc con số 100%:</b> cả hai nguồn lỗi do dự án tự sinh, nên con số này chưa cho biết bộ kiểm có bắt được lỗi lạ của model thật hay không.
         </p>
       </Section>
 
       <Section>
-        <SectionHead eyebrow="2 · So với LLM chấm" title="Luật xác định cho cùng kết luận mọi lần chạy"
-          lead="Cùng 202 ca, mỗi bên chạy 3 lần. LLM chấm là model giả lập được hỏi 'câu SQL này có đúng với chỉ số không?', với độ nhiễu chỉnh cho giống một LLM chấm điển hình." />
-        <div className="scroll-thin overflow-x-auto rounded-xl border border-line bg-surface">
+        <SectionHead eyebrow="2. So với LLM chấm" title="Bộ kiểm cho cùng kết luận ở cả ba lần chạy"
+          lead="Hai bên chấm cùng 202 ca, mỗi bên 3 lần. LLM chấm ở đây là model giả lập, độ nhiễu được chỉnh theo mức thường gặp ở LLM chấm." />
+        <div className="scroll-thin overflow-x-auto rounded-2xl border border-line bg-panel">
           <table className="w-full min-w-[760px] text-[14px]">
             <thead className="border-b border-line text-left text-[12.5px] text-faint">
               <tr><th className="px-5 py-3 font-medium">Bên kiểm</th><th className="px-5 py-3 text-right font-medium">Bắt lỗi</th><th className="px-5 py-3 text-right font-medium">Báo nhầm</th><th className="px-5 py-3 text-right font-medium">Cùng kết luận qua 3 lần</th><th className="px-5 py-3 text-right font-medium">Chi phí mỗi ca</th><th className="px-5 py-3 text-right font-medium">Độ trễ</th></tr>
@@ -113,12 +112,12 @@ export default function EvaluationPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-5 max-w-[820px] text-[14px] leading-[1.65] text-muted">Cột của bộ kiểm là đo thật. Cột của LLM chấm chỉ có ý nghĩa ngang với mô hình nhiễu của model giả lập. Điều bảng muốn kiểm khi thay bằng model thật: một bộ kiểm xác định ổn định giữa các lần chạy và nói được vì sao.</p>
+        <p className="mt-5 max-w-[820px] text-[14px] leading-[1.65] text-muted">Dòng bộ kiểm lineage là số đo thật. Hai dòng LLM chấm chỉ phản ánh độ nhiễu của model giả lập.</p>
       </Section>
 
       <Section sunk>
-        <SectionHead eyebrow="3 · Agent theo model và cấu hình" title="Bộ kiểm chặn số sai, tự sửa lấy lại câu bị giữ"
-          lead="116 câu hỏi tiếng Việt: 12 chỉ số × 9 mẫu câu, 9 câu ngoài phạm vi và 4 câu hỏi định nghĩa. Bốn cấu hình bật dần từng phần." />
+        <SectionHead eyebrow="3. Agent theo model và cấu hình" title="Kết quả của agent qua bốn cấu hình A đến D"
+          lead="Bộ gồm 116 câu hỏi tiếng Việt trên 12 chỉ số, trong đó có 9 câu ngoài phạm vi và 4 câu hỏi về định nghĩa." />
         <div className="mb-5 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-ink-2" aria-hidden>
           {SERIES.map((s) => <span key={s.key} className="inline-flex items-center gap-2"><span className={`${s.cls} size-2.5 rounded-[3px]`} />{s.label}</span>)}
         </div>
@@ -129,7 +128,7 @@ export default function EvaluationPage() {
         <dl className="mt-6 grid gap-2 text-[13.5px] text-muted sm:grid-cols-2 lg:grid-cols-4">
           {Object.entries(CFG).map(([k, v]) => <div key={k}><dt className="inline font-mono font-medium text-ink-2">{k}</dt> <dd className="inline">{v}</dd></div>)}
         </dl>
-        <details className="mt-8 rounded-xl border border-line bg-surface">
+        <details className="mt-8 rounded-2xl border border-line bg-panel">
           <summary className="cursor-pointer px-5 py-3.5 text-[14px] font-medium">Xem bảng số</summary>
           <div className="scroll-thin overflow-x-auto border-t border-line">
             <table className="w-full min-w-[640px] text-[13.5px]">
@@ -145,18 +144,18 @@ export default function EvaluationPage() {
           </div>
         </details>
         <p className="mt-6 max-w-[820px] text-[14px] leading-[1.65] text-muted">
-          <b className="font-semibold text-ink-2">Vì sao đây chưa phải kết quả:</b> lỗi của model giả lập là cấy vào, bản sửa đến từ cùng bộ dựng với SQL chuẩn, nên D gần như hoàn hảo theo cách xây dựng.
-          Điều bảng cho thấy là hình dạng: C chặn gần hết số sai trước khi tới người hỏi (mock-small: 80 câu sai không cảnh báo còn 0), D lấy lại phần lớn câu bị giữ với chi phí khoảng 1,5 lần A.
-          Câu ngoài phạm vi bị từ chối đúng 9/9 ở mọi cấu hình.
+          <b className="font-semibold text-ink-2">Vì sao chưa coi đây là kết quả:</b> model giả lập mắc đúng những lỗi được cấy sẵn, nên D gần hoàn hảo là do cách dựng thí nghiệm.
+          Điều đáng xem là sự thay đổi giữa các cấu hình. Với mock-small, C đưa số câu sai không cảnh báo từ 80 về 0, còn D lấy lại phần lớn câu bị giữ với chi phí khoảng 1,5 lần A.
+          Cả bốn cấu hình đều từ chối đúng 9/9 câu ngoài phạm vi.
         </p>
       </Section>
 
       <Section>
-        <SectionHead eyebrow="4 · Hiểu câu hỏi và tìm bảng" title="Hai lỗi hiểu câu, cả hai là cách diễn đạt lạ" />
+        <SectionHead eyebrow="4. Hiểu câu hỏi và tìm bảng" title="Agent phân loại sai 2/50 câu, cả hai dùng cách diễn đạt lạ" />
         <div className="grid gap-8 sm:grid-cols-3">
           <Stat value="96,0%" label="phân loại ý định" note="48/50, tập gán nhãn tay" />
           <Stat value="95,2%" label="khớp đúng chỉ số" note="40/42 câu có nêu chỉ số" />
-          <Stat value="100%" label="tìm bảng recall@5" note="bị thổi phồng, dùng làm kiểm tra hồi quy" />
+          <Stat value="100%" label="tìm bảng recall@5" note="số bị thổi phồng, chỉ dùng để kiểm hồi quy" />
         </div>
       </Section>
 
@@ -165,21 +164,21 @@ export default function EvaluationPage() {
           <div>
             <H2>Giới hạn</H2>
             <ul className="mt-6 space-y-4 text-[15px] leading-[1.65] text-ink-2">
-              <li><b className="font-semibold">Chưa có LLM thật.</b> So sánh model, LLM chấm và nguồn lỗi (b) cần chạy lại với model thật, và nguồn (b) cần người gán nhãn.</li>
-              <li><b className="font-semibold">Dữ liệu tổng hợp.</b> Số dòng và phân phối theo schema Olist, không phải dữ liệu thật. Có sẵn lệnh nạp file CSV Olist từ Kaggle để chạy lại.</li>
-              <li><b className="font-semibold">Một dialect.</b> Chỉ Postgres, mỗi database một warehouse.</li>
+              <li><b className="font-semibold">Chưa có LLM thật.</b> So sánh model, LLM chấm và nguồn lỗi (b) cần chạy lại với model thật và người gán nhãn.</li>
+              <li><b className="font-semibold">Dữ liệu tổng hợp.</b> Số dòng và phân phối sinh theo schema Olist. Có lệnh nạp CSV Olist thật từ Kaggle để chạy lại.</li>
+              <li><b className="font-semibold">Chỉ một dialect SQL.</b> Hiện chỉ hỗ trợ Postgres, mỗi database ứng với một warehouse.</li>
             </ul>
           </div>
           <div>
             <H2>Tự chạy lại</H2>
-            <p className="mt-6 text-[15px] leading-[1.65] text-muted">Mỗi lần chạy ghi báo cáo vào <span className="font-mono text-ink-2">backend/eval/results/</span> và một dòng vào bảng <span className="font-mono text-ink-2">app.eval_runs</span>. Trong app, tab Đánh giá có nút chạy lại.</p>
+            <p className="mt-6 text-[15px] leading-[1.65] text-muted">Kết quả ghi vào <span className="font-mono text-ink-2">backend/eval/results/</span> và bảng <span className="font-mono text-ink-2">app.eval_runs</span>, hoặc chạy lại từ tab Đánh giá.</p>
             <Frame glow={false} className="mt-6"><Code className="rounded-none border-0">{`make eval
 # hoặc
 cd backend && python -m lvda.evaluation all`}</Code></Frame>
           </div>
         </div>
       </Section>
-      <CtaBand title="Đừng tin con số. Chạy lại nó." lead="Hai lệnh Docker để dựng LVDA, một lệnh để tái tạo mọi bảng trên trang này." />
+      <CtaBand title="Tự chạy lại phần đánh giá trên máy của bạn" lead="Dựng stack bằng hai lệnh Docker, sau đó chạy make eval để tạo lại mọi bảng trên trang." />
     </>
   );
 }

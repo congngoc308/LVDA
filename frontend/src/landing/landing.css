@@ -34,3 +34,48 @@
 
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* ---- v3: nền tối sâu hơn app, quầng màu, lưới ô vuông, thẻ nổi khi rê ---- */
+.lp-root { background: #08090f; }
+:root[data-theme="light"] .lp-root { background: var(--color-paper); }
+.lp-header { background: rgb(8 9 15 / 0.72); }
+:root[data-theme="light"] .lp-header { background: rgb(245 246 250 / 0.8); }
+
+/* quầng ba màu sau hero: xanh (Xanh), đỏ (Đỏ), vàng (Vàng) */
+.lp-aura {
+  background:
+    radial-gradient(40% 45% at 50% 40%, oklch(0.6 0.15 255 / 0.35), transparent 70%),
+    radial-gradient(25% 30% at 25% 70%, oklch(0.72 0.17 22 / 0.12), transparent 70%),
+    radial-gradient(25% 30% at 78% 65%, oklch(0.84 0.15 75 / 0.1), transparent 70%);
+}
+:root[data-theme="light"] .lp-aura { opacity: 0.55; }
+.lp-squares {
+  background-image: linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(60% 55% at 50% 30%, black, transparent);
+}
+:root[data-theme="light"] .lp-squares {
+  background-image: linear-gradient(rgb(17 19 29 / 0.05) 1px, transparent 1px), linear-gradient(90deg, rgb(17 19 29 / 0.05) 1px, transparent 1px);
+}
+.lp-blob-red { background: radial-gradient(50% 50% at 50% 50%, oklch(0.72 0.17 22 / 0.1), transparent 70%); }
+.lp-blob-blue { background: radial-gradient(50% 50% at 50% 50%, oklch(0.6 0.15 255 / 0.16), transparent 70%); }
+.lp-cta-bg { background: radial-gradient(60% 90% at 50% 0%, oklch(0.6 0.15 255 / 0.4), transparent 70%), var(--color-paper); }
+:root[data-theme="light"] .lp-cta-bg { background: radial-gradient(60% 90% at 50% 0%, oklch(0.62 0.16 255 / 0.18), transparent 70%), var(--color-surface); }
+
+/* viền gradient 1px cho khung ảnh và khối "lớp kiểm chứng" */
+.lp-edge { padding: 1px; background: linear-gradient(160deg, rgb(130 180 255 / 0.4), var(--color-line) 50%); }
+.lp-edge-strong { padding: 1px; background: linear-gradient(160deg, #5b9bff, oklch(0.45 0.1 255) 40%, var(--color-line)); box-shadow: 0 0 80px -20px oklch(0.6 0.15 255 / 0.6); }
+:root[data-theme="light"] .lp-edge-strong { box-shadow: 0 0 60px -24px oklch(0.6 0.15 255 / 0.45); }
+.lp-hero-edge { background: linear-gradient(180deg, rgb(130 180 255 / 0.35), rgb(43 46 68 / 0.4) 40%, transparent); }
+:root[data-theme="light"] .lp-hero-edge { background: linear-gradient(180deg, rgb(34 87 214 / 0.25), rgb(208 212 224 / 0.6) 40%, transparent); }
+.lp-fade { mask-image: linear-gradient(to bottom, black 70%, transparent); }
+
+.lp-lift { transition: transform .25s ease, border-color .25s ease; }
+.lp-lift:hover { transform: translateY(-4px); border-color: var(--color-edge-hover); }
+@media (prefers-reduced-motion: reduce) { .lp-lift:hover { transform: none; } }
+.lp-layer { background: #0e1222; }
+:root[data-theme="light"] .lp-layer { background: #f2f6ff; }
+
+/* ảnh xếp sau trong khối Quy trình: tối lại trên nền tối, nền sáng thì chỉ nhạt đi */
+.lp-back { filter: brightness(0.6); }
+:root[data-theme="light"] .lp-back { filter: none; }
